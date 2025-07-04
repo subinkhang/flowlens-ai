@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import ReactFlow, {
   useNodesState,
   useEdgesState,
@@ -9,51 +9,71 @@ import ReactFlow, {
   MarkerType,
   BackgroundVariant,
 } from 'reactflow';
-import type { OnConnect, Node, Edge, Connection } from 'reactflow'; 
+import type { Node, Edge, Connection } from 'reactflow'; 
 
+// Import các thành phần và API cần thiết
+import { getSessionData } from '../api/mockApi';
 import { ConditionPanel } from './ConditionPanel';
 import type { Rule } from './ConditionPanel';
-import { CustomEdge } from './CustomEdge'; // *** QUAN TRỌNG (1): Import CustomEdge ***
+import { CustomEdge } from './CustomEdge';
 
 import 'reactflow/dist/style.css';
 import './DiagramPage.css';
 
-// *** QUAN TRỌNG (2): Đăng ký component CustomEdge ***
-// Đây là bước "đăng ký" component của chúng ta với ReactFlow.
+// Đăng ký component Edge tùy chỉnh với ReactFlow
 const edgeTypes = {
   custom: CustomEdge,
 };
 
-// ... (initialNodes giữ nguyên) ...
-const initialNodes: Node[] = [
-    { id: '1', type: 'input', data: { label: 'Khách hàng nộp hồ sơ vay' }, position: { x: 250, y: 5 } },
-    { id: '2', data: { label: 'Chuyên viên tín dụng thẩm định hồ sơ' }, position: { x: 250, y: 100 } },
-    { id: '3', data: { label: 'Trình hồ sơ lên cấp quản lý' }, position: { x: 250, y: 200 } },
-    { id: '4', type: 'output', data: { label: 'Phê duyệt hoặc Từ chối' }, position: { x: 250, y: 300 } },
-];
-
-// *** QUAN TRỌNG (3): Cập nhật dữ liệu mẫu để sử dụng type 'custom' ***
-const initialEdges: Edge[] = [
-  { id: 'e1-2', source: '1', target: '2', type: 'custom', markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e2-3', source: '2', target: '3', type: 'custom', markerEnd: { type: MarkerType.ArrowClosed } },
-  { id: 'e3-4', source: '3', target: '4', type: 'custom', markerEnd: { type: MarkerType.ArrowClosed } },
-];
-
-let nodeId = 5;
+let nodeIdCounter = 5; // Dùng một tên khác để tránh xung đột với kiểu dữ liệu 'Node'
 
 export const DiagramPage: React.FC = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  // --- STATE MANAGEMENT ---
+  // Tất cả các hook được gọi ở cấp cao nhất để tuân thủ "Rules of Hooks"
+  const [initialData, setInitialData] = useState<{ nodes: Node[], edges: Edge[] } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
 
-  const onConnect = useCallback(
-    (params: Connection) => {
-      // *** QUAN TRỌNG (4): Edge mới tạo ra cũng phải có type 'custom' ***
-      const newEdge = { ...params, type: 'custom', animated: true, markerEnd: { type: MarkerType.ArrowClosed } };
-      setEdges((eds) => addEdge(newEdge, eds));
-    },
-    [setEdges]
-  );
+
+  // --- SIDE EFFECTS ---
+  // useEffect để lấy dữ liệu từ API dựa trên sessionId từ URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('sessionId');
+
+    if (sessionId) {
+      getSessionData(sessionId, 'diagram')
+        .then(data => {
+          setInitialData(data);
+          document.title = `Sơ đồ - Session ${sessionId.substring(8, 14)}`;
+        })
+        .catch(err => {
+          setError(err.message || "Đã xảy ra lỗi không xác định.");
+        });
+    } else {
+      setError("Không tìm thấy Session ID trên URL. Vui lòng thử lại từ trang chat.");
+    }
+  }, []); // Mảng rỗng đảm bảo chỉ chạy 1 lần
+
+  // useEffect để cập nhật state của React Flow sau khi đã lấy được dữ liệu
+  useEffect(() => {
+    if (initialData) {
+      setNodes(initialData.nodes);
+      setEdges(initialData.edges);
+      // Cập nhật bộ đếm nodeId để tránh trùng lặp khi thêm node mới
+      nodeIdCounter = initialData.nodes.length + 1;
+    }
+  }, [initialData, setNodes, setEdges]);
+
+
+  // --- EVENT HANDLERS & CALLBACKS ---
+  const onConnect = useCallback((params: Connection) => {
+    const newEdge = { ...params, type: 'custom', animated: true, markerEnd: { type: MarkerType.ArrowClosed } };
+    setEdges((eds) => addEdge(newEdge, eds));
+  }, [setEdges]);
 
   const onEdgeClick = useCallback((event: React.MouseEvent, edge: Edge) => {
     event.stopPropagation();
@@ -62,12 +82,12 @@ export const DiagramPage: React.FC = () => {
 
   const onPaneClick = useCallback(() => setSelectedEdge(null), []);
 
-  const handleSaveConditions = (edgeId: string, logic: 'AND' | 'OR', rules: Rule[]) => {
+  const handleSaveConditions = useCallback((edgeId: string, logic: 'AND' | 'OR', rules: Rule[]) => {
     setEdges((eds) =>
       eds.map((edge) => (edge.id === edgeId ? { ...edge, data: { ...edge.data, rules, logic } } : edge))
     );
-  };
-  
+  }, [setEdges]);
+
   const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
     const newLabel = prompt('Nhập tên mới cho bước này:', node.data.label);
     if (newLabel !== null && newLabel.trim() !== '') {
@@ -76,7 +96,7 @@ export const DiagramPage: React.FC = () => {
   }, [setNodes]);
 
   const onAddNode = useCallback(() => {
-    const newNode = { id: `${nodeId++}`, data: { label: 'Bước mới' }, position: { x: Math.random() * 400, y: Math.random() * 400 } };
+    const newNode = { id: `${nodeIdCounter++}`, data: { label: 'Bước mới' }, position: { x: Math.random() * 400, y: Math.random() * 400 } };
     setNodes((nds) => nds.concat(newNode));
   }, [setNodes]);
 
@@ -90,6 +110,17 @@ export const DiagramPage: React.FC = () => {
     alert('Đã xuất "Golden JSON" sạch sẽ ra Console!');
   }, [nodes, edges]);
 
+
+  // --- CONDITIONAL RENDERING ---
+  // Luôn đặt các lệnh return sớm ở dưới cùng, sau khi tất cả các hook đã được gọi
+  // if (error) {
+  //   return <div style={{ padding: '20px', color: 'red' }}><h1>Lỗi</h1><p>{error}</p></div>;
+  // }
+  // if (!initialData) {
+  //   return <div style={{ padding: '20px' }}><h1>Đang tải dữ liệu sơ đồ...</h1></div>;
+  // }
+
+  // --- JSX RENDER ---
   return (
     <div className="diagram-page">
       <div className="diagram-header">
@@ -107,7 +138,7 @@ export const DiagramPage: React.FC = () => {
         onPaneClick={onPaneClick}
         onEdgeClick={onEdgeClick}
         onNodeDoubleClick={onNodeDoubleClick}
-        edgeTypes={edgeTypes} // *** QUAN TRỌNG (5): Truyền edgeTypes vào ReactFlow ***
+        edgeTypes={edgeTypes}
         fitView
       >
         <Controls />

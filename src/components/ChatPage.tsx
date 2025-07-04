@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './ChatPage.css'; // Import file CSS
-import { useNavigate } from 'react-router-dom';
+import { mockApiCall } from '../api/mockApi';
+import { generateSessionId } from '../utils/sessionId';
+import './ChatPage.css';
 
 // Định nghĩa kiểu dữ liệu cho một tin nhắn
 interface Message {
@@ -9,91 +10,148 @@ interface Message {
   sender: 'user' | 'ai';
 }
 
-export const ChatPage: React.FC = () => {
-  // State để lưu danh sách tin nhắn
-  const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: 'Xin chào! Tôi là FlowLens AI. Hãy mô tả quy trình nghiệp vụ bạn muốn phân tích.',
-      sender: 'ai',
-    },
-  ]);
-  
-  // State cho nội dung người dùng đang gõ
-  const [inputText, setInputText] = useState<string>('');
-  
-  // State để hiển thị trạng thái AI đang "suy nghĩ"
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+// Danh sách các tag gợi ý
+const TAG_SUGGESTIONS = ['@diagram', '@ask', ' @improve'];
 
-  // Ref để tự động cuộn xuống tin nhắn mới nhất
+export const ChatPage: React.FC = () => {
+  // --- STATE MANAGEMENT ---
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputText, setInputText] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  // State quan trọng: Quản lý ID của phiên làm việc hiện tại
+  const [sessionId, setSessionId] = useState<string>('');
+
   const messageListRef = useRef<HTMLDivElement>(null);
 
+
+  // --- SIDE EFFECTS ---
+  // Chạy 1 lần duy nhất khi component được tải lần đầu
   useEffect(() => {
-    // Tự động cuộn xuống dưới cùng khi có tin nhắn mới
+    // 1. Tạo một Session ID duy nhất cho phiên làm việc này
+    const newSessionId = generateSessionId();
+    setSessionId(newSessionId);
+
+    // 2. Thêm tin nhắn chào mừng vào giao diện chat
+    setMessages([
+      { 
+        id: 1, 
+        text: `Chào mừng bạn! Một phiên làm việc mới đã được tạo với ID: ${newSessionId.substring(0, 18)}... Gõ @ để xem lệnh.`, 
+        sender: 'ai' 
+      },
+    ]);
+  }, []); // Mảng rỗng đảm bảo useEffect này chỉ chạy 1 lần
+
+  // Tự động cuộn xuống tin nhắn mới nhất
+  useEffect(() => {
     if (messageListRef.current) {
       messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
 
 
-  const handleSendMessage = () => {
-    if (inputText.trim() === '') return;
+  // --- EVENT HANDLERS ---
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputText(value);
+    if (value.startsWith('@')) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
 
-    // ... (phần code thêm tin nhắn người dùng giữ nguyên) ...
+  const handleSuggestionClick = (tag: string) => {
+    setInputText(tag + ' ');
+    setShowSuggestions(false);
+    document.getElementById('chat-input')?.focus();
+  };
 
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: Date.now() + 1,
-        text: `Đã hiểu! Tôi đã phân tích xong. Bây giờ, hãy xác thực sơ đồ trực quan.`,
-        sender: 'ai',
-      };
+  const handleSendMessage = async () => {
+    const trimmedInput = inputText.trim();
+    if (trimmedInput === '' || !sessionId) return;
+
+    setShowSuggestions(false);
+
+    let tag = 'no-tag';
+    let payload = trimmedInput;
+    if (trimmedInput.startsWith('@')) {
+      const firstSpaceIndex = trimmedInput.indexOf(' ');
+      if (firstSpaceIndex !== -1) {
+        tag = trimmedInput.substring(0, firstSpaceIndex);
+        payload = trimmedInput.substring(firstSpaceIndex + 1);
+      } else {
+        tag = trimmedInput;
+        payload = '';
+      }
+    }
+    
+    const newUserMessage: Message = { id: Date.now(), text: trimmedInput, sender: 'user' };
+    setMessages(prev => [...prev, newUserMessage]);
+    setInputText('');
+    setIsLoading(true);
+
+    // Gọi API với đầy đủ tham số: tag, payload, và sessionId
+    const response = await mockApiCall(tag, payload, sessionId);
+    setIsLoading(false);
+    
+    const aiResponseMessage: Message = { id: Date.now() + 1, text: response.message, sender: 'ai' };
+    setMessages(prev => [...prev, aiResponseMessage]);
+
+    // Mở tab mới với sessionId, không còn dùng localStorage nữa
+    if (response.action === 'NAVIGATE_TO_DIAGRAM' || response.action === 'NAVIGATE_TO_ANALYSIS') {
+      const url = response.action === 'NAVIGATE_TO_DIAGRAM' 
+        ? `/diagram?sessionId=${response.sessionId}` 
+        : `/analysis?sessionId=${response.sessionId}`;
       
-      setIsLoading(false);
-      setMessages(prevMessages => [...prevMessages, aiResponse]);
-      
-      // 3. CHUYỂN TRANG!
-      // Thêm một chút độ trễ để người dùng kịp đọc tin nhắn
-      setTimeout(() => {
-        navigate('/diagram'); // Chuyển đến trang có URL là /diagram
-      }, 1000); // Chờ 1 giây sau khi AI trả lời rồi mới chuyển
-
-    }, 1500);
+      window.open(url, '_blank');
+    }
   };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !isLoading) {
       handleSendMessage();
     }
   };
 
 
+  // --- JSX RENDER ---
   return (
     <div className="chat-page">
       <div className="message-list" ref={messageListRef}>
         {messages.map(message => (
-          <div
-            key={message.id}
-            className={`message ${message.sender === 'user' ? 'user-message' : 'ai-message'}`}
-          >
+          <div key={message.id} className={`message ${message.sender}-message`}>
             {message.text}
           </div>
         ))}
         {isLoading && <div className="loading-indicator">FlowLens đang suy nghĩ...</div>}
       </div>
 
-      <div className="message-input-container">
-        <input
-          type="text"
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Nhập mô tả quy trình ở đây..."
-          disabled={isLoading}
-        />
-        <button onClick={handleSendMessage} disabled={isLoading}>
-          Gửi
-        </button>
+      <div className="input-area">
+        {showSuggestions && (
+          <div className="suggestions-container">
+            {TAG_SUGGESTIONS.map(tag => (
+              <div key={tag} className="suggestion-item" onClick={() => handleSuggestionClick(tag)}>
+                {tag}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="message-input-container">
+          <input
+            id="chat-input"
+            type="text"
+            value={inputText}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
+            placeholder="Dùng @tag để ra lệnh..."
+            disabled={isLoading}
+            autoComplete="off"
+          />
+          <button onClick={handleSendMessage} disabled={isLoading || !sessionId}>Gửi</button>
+        </div>
       </div>
     </div>
   );
