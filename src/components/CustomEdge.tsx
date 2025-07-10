@@ -27,7 +27,6 @@ const EdgeLabel = ({ rules, logic }: { rules: Rule[], logic: 'AND' | 'OR' }) => 
 
 
 export const CustomEdge: React.FC<EdgeProps> = ({
-  id,
   sourceX,
   sourceY,
   targetX,

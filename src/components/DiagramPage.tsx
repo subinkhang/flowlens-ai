@@ -31,7 +31,7 @@ export const DiagramPage: React.FC = () => {
   // --- STATE MANAGEMENT ---
   // Tất cả các hook được gọi ở cấp cao nhất để tuân thủ "Rules of Hooks"
   const [initialData, setInitialData] = useState<{ nodes: Node[], edges: Edge[] } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -51,10 +51,12 @@ export const DiagramPage: React.FC = () => {
           document.title = `Sơ đồ - Session ${sessionId.substring(8, 14)}`;
         })
         .catch(err => {
-          setError(err.message || "Đã xảy ra lỗi không xác định.");
+          // setError(err.message || "Đã xảy ra lỗi không xác định.");
+          console.log(err);
         });
     } else {
-      setError("Không tìm thấy Session ID trên URL. Vui lòng thử lại từ trang chat.");
+      // setError("Không tìm thấy Session ID trên URL. Vui lòng thử lại từ trang chat.");
+      console.log("Không tìm thấy Session ID trên URL. Vui lòng thử lại từ trang chat.");
     }
   }, []); // Mảng rỗng đảm bảo chỉ chạy 1 lần
 
@@ -88,7 +90,8 @@ export const DiagramPage: React.FC = () => {
     );
   }, [setEdges]);
 
-  const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
+  // const onNodeDoubleClick = useCallback((event: React.MouseEvent, node: Node) => {
+  const onNodeDoubleClick = useCallback((_event: React.MouseEvent, node: Node) => {
     const newLabel = prompt('Nhập tên mới cho bước này:', node.data.label);
     if (newLabel !== null && newLabel.trim() !== '') {
       setNodes((nds) => nds.map((n) => (n.id === node.id ? { ...n, data: { ...n.data, label: newLabel } } : n)));
