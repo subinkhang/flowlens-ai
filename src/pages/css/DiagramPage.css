@@ -1,0 +1,133 @@
+/* src/components/DiagramPage.css */
+
+.diagram-page {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.diagram-header {
+  padding: 15px 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  text-align: center;
+}
+
+.diagram-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.diagram-header p {
+  margin: 5px 0 0;
+  color: #6c757d;
+}
+
+/* Quan trọng: ReactFlow cần một container có chiều cao xác định để render */
+.react-flow {
+  flex-grow: 1; /* Làm cho canvas của React Flow chiếm hết phần còn lại */
+  background-color: #ffffff;
+}
+
+.diagram-footer {
+  padding: 15px;
+  text-align: center;
+  border-top: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+}
+
+.confirm-button {
+  padding: 12px 25px;
+  font-size: 16px;
+  font-weight: bold;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.confirm-button:hover {
+  background-color: #218838;
+}
+
+.add-node-button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  font-size: 14px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.add-node-button:hover {
+  background-color: #0056b3;
+}
+
+/* LOADING  */
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+  background: #f4f6f9;
+  font-family: "Segoe UI", sans-serif;
+}
+
+.loading-container h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 10px 0;
+  text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.loading-container p {
+  font-size: 16px;
+  color: #6c757d;
+  margin: 0;
+  text-align: center;
+  animation: fadeIn 0.7s ease-in-out;
+}
+
+/* Hiệu ứng loading với dấu chấm */
+.loading-container p::after {
+  content: ".";
+  animation: dots 1.5s infinite;
+  display: inline-block;
+  width: 1em;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dots {
+  0% {
+    content: ".";
+  }
+  33% {
+    content: "..";
+  }
+  66% {
+    content: "...";
+  }
+  100% {
+    content: ".";
+  }
+}
