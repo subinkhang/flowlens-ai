@@ -1,0 +1,127 @@
+.chat-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f4f6f9;
+  font-family: "Segoe UI", sans-serif;
+  align-items: center;
+}
+
+.chat-page > * {
+  width: 100%;
+  max-width: 800px;
+}
+
+.message-list {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background: #ffffff;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  padding: 12px 16px;
+  margin: 8px 16px;
+  border-radius: 16px;
+  max-width: 60%; /* Giảm max-width để tin nhắn gọn hơn */
+  word-wrap: break-word;
+  line-height: 1.4;
+  font-size: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.user-message {
+  margin-left: auto; /* Đẩy tin nhắn của client sang bên phải */
+  background-color: #d1e7dd;
+  color: #0f5132;
+  border-top-right-radius: 4px; /* Bo góc nhẹ ở góc trên bên phải để giống chat */
+}
+
+.ai-message {
+  margin-right: auto; /* Đẩy tin nhắn của hệ thống sang bên trái */
+  background-color: #e2e3e5;
+  color: #41464b;
+  border-top-left-radius: 4px; /* Bo góc nhẹ ở góc trên bên trái để giống chat */
+}
+
+.loading-indicator {
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.input-area {
+  padding: 12px;
+  background: #f8f9fa;
+  border-top: 1px solid #ddd;
+}
+
+.message-input-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.message-input-container input[type="text"] {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+}
+
+.message-input-container input[type="file"] {
+  padding: 6px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.message-input-container button {
+  padding: 10px 16px;
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.message-input-container button:disabled {
+  background-color: #adb5bd;
+  cursor: not-allowed;
+}
+
+.message-input-container button:hover:not(:disabled) {
+  background-color: #0b5ed7;
+}
+
+.suggestions-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.suggestion-item {
+  background-color: #e9ecef;
+  padding: 6px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+  background-color: #ced4da;
+}
