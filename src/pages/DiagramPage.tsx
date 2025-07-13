@@ -12,7 +12,6 @@ import ReactFlow, {
   type Edge,
   type Connection,
 } from "reactflow";
-
 import { DiagramHeader } from "../components/Diagram/DiagramHeader";
 import { DiagramFooter } from "../components/Diagram/DiagramFooter";
 import "reactflow/dist/style.css";
@@ -140,6 +139,15 @@ export const DiagramPage: React.FC = () => {
     alert("Đã xuất 'Golden JSON' sạch sẽ ra Console!");
   }, [nodes, edges]);
 
+  const onAnalyze = useCallback(
+    (question: string) => {
+      const state = { nodes, edges, question };
+      localStorage.setItem("analyzeState", JSON.stringify(state));
+      window.open("/analyze", "_blank");
+    },
+    [nodes, edges]
+  );
+
   if (error) {
     return (
       <div style={{ padding: "20px", color: "red" }}>
@@ -161,7 +169,6 @@ export const DiagramPage: React.FC = () => {
   return (
     <div className="diagram-page">
       <DiagramHeader onAddNode={onAddNode} />
-
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -178,7 +185,6 @@ export const DiagramPage: React.FC = () => {
         <MiniMap />
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
       </ReactFlow>
-
       {selectedEdge && (
         <ConditionPanel
           selectedEdge={selectedEdge}
@@ -186,8 +192,7 @@ export const DiagramPage: React.FC = () => {
           onClose={() => setSelectedEdge(null)}
         />
       )}
-
-      <DiagramFooter onExport={onExport} />
+      <DiagramFooter onExport={onExport} onAnalyze={onAnalyze} />
     </div>
   );
 };
