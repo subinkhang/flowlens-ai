@@ -14,11 +14,10 @@ export const ChatPage: React.FC = () => {
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [sessionId, setSessionId] = useState("");
+  const [, setSessionId] = useState("");
   const messageListRef = useRef<HTMLDivElement>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
 
-  console.log("sessionId ->", sessionId);
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && !isLoading) {
       handleSendMessage();
@@ -34,7 +33,7 @@ export const ChatPage: React.FC = () => {
         text: `Chào mừng bạn! Một phiên làm việc mới đã được tạo với ID: ${newSessionId.substring(
           0,
           18
-        )}... Gõ @ để xem lệnh.`,
+        )} ... Gõ @ để xem lệnh.`,
         sender: "ai",
       },
     ]);
@@ -60,10 +59,23 @@ export const ChatPage: React.FC = () => {
 
   const handleSendMessage = async () => {
     const trimmedInput = inputText.trim();
-    if (trimmedInput === "" && !imageBase64) return;
+
+    // Không có ảnh + không có text
+    if (!imageBase64 && trimmedInput === "") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          text: "⚠️ Bạn cần nhập nội dung hoặc tải ảnh lên.",
+          sender: "ai",
+        },
+      ]);
+      return;
+    }
 
     setShowSuggestions(false);
 
+    // Tách tag
     let tag = "no-tag";
     let payload = trimmedInput;
     if (trimmedInput.startsWith("@")) {
@@ -86,13 +98,28 @@ export const ChatPage: React.FC = () => {
     setInputText("");
     setIsLoading(true);
 
+    // Gửi ảnh
     if (tag === "@diagram") {
       try {
+        if (imageBase64 && !imageBase64.startsWith("data:image/")) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now(),
+              text: "❌ Ảnh không hợp lệ hoặc chưa tải xong.",
+              sender: "ai",
+            },
+          ]);
+          setIsLoading(false);
+          return;
+        }
+
         const response = await generateDiagram({
           text: payload || undefined,
-          image: imageBase64 || undefined,
+          image: imageBase64?.split(",")[1] || undefined,
           language: isVietnameseText(inputText) ? "vietnamese" : "english",
         });
+        console.log("response ->", response);
 
         setMessages((prev) => [
           ...prev,
@@ -103,11 +130,13 @@ export const ChatPage: React.FC = () => {
           },
         ]);
 
-        const golden = JSON.stringify(response.diagram);
-        const blob = new Blob([golden], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        window.open(`/diagram?q=${encodeURIComponent(payload)}`, "_blank");
-        console.log("url ->", url);
+        if (imageBase64) {
+          sessionStorage.setItem("diagramImage", imageBase64);
+          window.open(`/diagram?type=image`, "_blank");
+        } else {
+          const inputData = encodeURIComponent(payload);
+          window.open(`/diagram?type=text&q=${inputData}`, "_blank");
+        }
       } catch {
         setMessages((prev) => [
           ...prev,
@@ -125,9 +154,14 @@ export const ChatPage: React.FC = () => {
       setTimeout(() => {
         setMessages((prev) => [
           ...prev,
-          { id: Date.now() + 3, text: "📌 Đã ghi nhận yêu cầu.", sender: "ai" },
+          {
+            id: Date.now() + 3,
+            text: "📌 Đã ghi nhận yêu cầu.",
+            sender: "ai",
+          },
         ]);
         setIsLoading(false);
+        setImageBase64(null);
       }, 1000);
     }
   };
@@ -149,13 +183,11 @@ export const ChatPage: React.FC = () => {
           onInputChange={handleInputChange}
           onKeyPress={handleKeyPress}
           onSend={handleSendMessage}
-          onFileUpload={(file) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              setImageBase64(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+          onFileUpload={(base64) => {
+            setImageBase64(base64);
           }}
+          imageBase64={imageBase64}
+          setImageBase64={setImageBase64}
         />
       </div>
     </div>
