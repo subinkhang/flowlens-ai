@@ -131,3 +131,55 @@
     content: ".";
   }
 }
+
+.diagram-footer {
+  padding: 15px;
+  border-top: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.question-input {
+  flex: 1;
+  min-width: 220px;
+  max-width: 400px;
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  outline: none;
+}
+
+.analyze-button,
+.confirm-button {
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.analyze-button {
+  background-color: #007bff;
+  color: white;
+}
+
+.analyze-button:hover {
+  background-color: #0056b3;
+}
+
+.confirm-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.confirm-button:hover {
+  background-color: #218838;
+}
