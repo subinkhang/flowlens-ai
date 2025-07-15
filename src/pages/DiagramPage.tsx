@@ -94,7 +94,7 @@ export const DiagramPage: React.FC = () => {
   );
 
   const onNodeDoubleClick = useCallback(
-    (event: React.MouseEvent, node: Node) => {
+    (_event: React.MouseEvent, node: Node) => {
       const newLabel = prompt("Nhập tên mới cho bước này:", node.data.label);
       if (newLabel !== null && newLabel.trim() !== "") {
         setNodes((nds) =>
