@@ -39,6 +39,9 @@ export const useDiagramAnalysis = () => {
     selectedDocumentIds: string[], 
     question?: string
   ) => { // Không cần trả về Promise ở đây nữa vì component sẽ nhận dữ liệu qua state
+    question: string,
+    sessionId: string
+  ): Promise<AnalysisResponse> => {
     setLoading(true);
     setError(null);
     setAnalysisData(null); // Xóa dữ liệu cũ để tránh hiển thị kết quả cũ trong thoáng chốc
@@ -75,6 +78,11 @@ export const useDiagramAnalysis = () => {
         localStorage.setItem(cacheKey, JSON.stringify(response));
         console.log("Đã lưu kết quả phân tích vào cache.");
       }
+      const payload = {
+        sessionId,
+        diagram: { nodes, edges },
+        ...(question?.trim() && { question }),
+      };
 
       setAnalysisData(response);
 

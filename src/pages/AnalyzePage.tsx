@@ -7,10 +7,12 @@ import ReportEvaluation from "../components/Analysis/ReportEvaluation";
 import ReportImprovement from "../components/Analysis/ReportImprovement";
 import ReportSummary from "../components/Analysis/ReportSummary";
 import ReportSources from "../components/Analysis/ReportSources";
+import { useSession } from "../hooks/useSession";
 
 const AnalyzePage: React.FC = () => {
   const { analysisData, loading, error, runAnalysis } = useDiagramAnalysis();
   const [timestamp, setTimestamp] = useState("");
+  const { sessionId } = useSession();
 
   useEffect(() => {
     const now = new Date();

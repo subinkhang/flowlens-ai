@@ -22,6 +22,7 @@ import { CustomEdge } from "../components/CustomEdge";
 import { useDiagramData } from "../hooks/useDiagram";
 import { ConditionPanel } from "../components/ConditionPanel";
 import type { DiagramEdge, DiagramNode, Rule } from "../types/ApiResponse";
+import { useSession } from "../hooks/useSession";
 
 const edgeTypes = { custom: CustomEdge };
 let nodeIdCounter = 5;
@@ -31,6 +32,7 @@ export const DiagramPage: React.FC = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
+  const { sessionId } = useSession();
 
   // 2. Thêm state mới để lưu các ID tài liệu đã chọn
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);

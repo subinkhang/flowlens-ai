@@ -97,7 +97,6 @@ export const ChatPage: React.FC = () => {
   const handleSendMessage = async () => {
     const trimmedInput = inputText.trim();
 
-    // Không có ảnh + không có text
     if (!imageBase64 && trimmedInput === "") {
       setMessages((prev) => [
         ...prev,
@@ -135,7 +134,7 @@ export const ChatPage: React.FC = () => {
     setInputText("");
     setIsLoading(true);
 
-    // Gửi ảnh
+    // Gửi ảnh hoặc text phân tích sơ đồ
     if (tag === "@diagram") {
       try {
         if (imageBase64 && !imageBase64.startsWith("data:image/")) {
@@ -169,10 +168,13 @@ export const ChatPage: React.FC = () => {
 
         if (imageBase64) {
           sessionStorage.setItem("diagramImage", imageBase64);
-          window.open(`/diagram?type=image`, "_blank");
+          window.open(`/diagram/${currentSessionId}?type=image`, "_blank");
         } else {
           const inputData = encodeURIComponent(payload);
-          window.open(`/diagram?type=text&q=${inputData}`, "_blank");
+          window.open(
+            `/diagram/${currentSessionId}?type=text&q=${inputData}`,
+            "_blank"
+          );
         }
       } catch {
         setMessages((prev) => [
@@ -200,6 +202,12 @@ export const ChatPage: React.FC = () => {
         setIsLoading(false);
         setImageBase64(null);
       }, 1000);
+    }
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && !isLoading) {
+      handleSendMessage();
     }
   };
 
