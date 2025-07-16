@@ -35,6 +35,14 @@ export const TextWithCitations: React.FC<Props> = ({ text, sources }) => {
               className="citation-link" 
               // Tooltip vẫn có thể dùng content_preview cho ngắn gọn
               title={`Trích từ: ${source.title}\n\n"${source.content_preview}"`}
+              style={{
+                backgroundColor: '#fff59d', // vàng highlight nhẹ
+                color: '#000',
+                textDecoration: 'none',
+                padding: '1px 1px',
+                borderRadius: '4px',
+                fontWeight: 'bold',
+              }}
             >
               [{citationId}]
             </Link>
