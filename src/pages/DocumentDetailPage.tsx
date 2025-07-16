@@ -1,17 +1,26 @@
 // src/pages/DocumentDetailPage.tsx
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import type { Document } from '../types/document'; // Import kiểu dữ liệu
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import type { Document } from '../types/ApiResponse'; // Import kiểu dữ liệu
 import { API_ENDPOINTS } from '../api/endpoints'; // Import cấu hình API
+import { HighlightedContent } from '../components/Document/HighlightedContent';
 
 const DocumentDetailPage: React.FC = () => {
   // Lấy documentId từ URL
   const { documentId } = useParams<{ documentId: string }>();
+  const [searchParams] = useSearchParams();
+  const highlightText = searchParams.get('highlight');
 
   // State để quản lý dữ liệu của tài liệu chi tiết
   const [document, setDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    console.log("--- DEBUG DocumentDetailPage ---");
+    console.log("documentId từ URL:", documentId);
+    console.log("highlightText từ URL:", highlightText);
+  }, [documentId, highlightText]);
 
   // Dùng useEffect để lấy dữ liệu chi tiết khi documentId thay đổi
   useEffect(() => {
@@ -86,9 +95,12 @@ const DocumentDetailPage: React.FC = () => {
 
       <div>
         <h3>Nội dung</h3>
-        <pre style={{ whiteSpace: 'pre-wrap', background: '#fff', padding: '15px', border: '1px solid #ddd', fontFamily: 'inherit' }}>
-          {/* Hiển thị textContent đã được trích xuất từ backend */}
-          {document.textContent || "[Không có nội dung text để hiển thị]"}
+        <pre style={{ whiteSpace: 'pre-wrap', /*...*/ }}>
+          {/* SỬ DỤNG COMPONENT MỚI ĐỂ HIỂN THỊ NỘI DUNG */}
+          <HighlightedContent 
+            content={document.textContent}
+            highlight={highlightText}
+          />
         </pre>
       </div>
     </div>

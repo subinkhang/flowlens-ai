@@ -148,6 +148,17 @@ const AnalyzePage: React.FC = () => {
 
   const { analysis, sources } = analysisData;
 
+  const testText = "Đây là ví dụ minh họa (Nguồn [3]) cho tính năng.";
+  const testSources = [
+    {
+      citationId: 3,
+      documentId: "abc123",
+      title: "Tài liệu mẫu",
+      content_preview: "Đoạn trích liên quan",
+      score: 0.95,
+    },
+  ];
+
   return (
     <div className="p-4 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-2">
@@ -156,12 +167,13 @@ const AnalyzePage: React.FC = () => {
       <p className="text-sm text-gray-600 mb-6">
         Thời gian tạo báo cáo: {timestamp}
       </p>
+      {/* TRUYỀN `sources` VÀO CÁC COMPONENT CON */}
       <ReportOverview overview={analysis.overview} />
       <ReportComponents components={analysis.components} />
       <ReportExecution execution={analysis.execution} />
-      <ReportEvaluation evaluation={analysis.evaluation} />
-      <ReportImprovement improvement={analysis.improvement} />
-      <ReportSummary summary={analysis.summary} />
+      <ReportEvaluation evaluation={analysis.evaluation} sources={sources} />
+      <ReportImprovement improvement={analysis.improvement} sources={sources} />
+      <ReportSummary summary={analysis.summary} sources={sources} />
       <ReportSources sources={sources} />
     </div>
   );
