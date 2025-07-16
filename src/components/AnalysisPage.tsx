@@ -1,96 +1,254 @@
-import React, { useState, useEffect } from 'react';
-import { getSessionData } from '../api/mockApi'; // Import API để lấy dữ liệu session
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { API_ENDPOINTS } from '../api/endpoints';
+import './css/AnalysisPage.css';
+import type { StructuredAnalysis, CitationSource, FullAnalysisResponse } from '../types/ApiResponse';
 
-// Định nghĩa kiểu dữ liệu cho dữ liệu phân tích để code được an toàn và dễ đọc hơn
-interface AnalysisData {
-  summary: string;
-  suggestions: string[];
-  risks: string[];
-}
+// --- CÁC COMPONENT CON ---
+
+const AnalysisSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <div className="analysis-section">
+    <h2>{title}</h2>
+    {children}
+  </div>
+);
+
+const TextWithCitations: React.FC<{ text: string; sources: CitationSource[] }> = ({ text, sources }) => {
+  if (!text) return <p>Chưa có thông tin</p>;
+
+  const renderedText = useMemo(() => {
+    const citationRegex = /\(Ngu[ồo]n\s*\[(\d+)\]\)/g;
+    const parts = text.split(citationRegex);
+    
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        const citationId = parseInt(part, 10);
+        const source = sources.find(s => s.citationId === citationId);
+        
+        if (source) {
+          const targetUrl = `https://fg9om4dvnk.execute-api.us-east-1.amazonaws.com/prod/documents/${source.documentId}?highlight=${encodeURIComponent(source.content_preview)}`;
+          return (
+            <Link key={index} to={targetUrl} className="citation-link" title={`Trích từ: ${source.title}\n\n"${source.content_preview}"`}>
+              [{citationId}]
+            </Link>
+          );
+        }
+        return `[${part}]`;
+      }
+      return part;
+    });
+  }, [text, sources]);
+
+  return <p>{renderedText}</p>;
+};
+
+const InfoPair: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className="info-pair">
+    <strong>{label}:</strong>
+    {children}
+  </div>
+);
+
+const InfoList: React.FC<{ label: string; items: React.ReactNode[] }> = ({ label, items }) => (
+  <div className="info-list">
+    <strong>{label}:</strong>
+    {items && items.length > 0 ? (
+      <ul>
+        {items.map((item, index) => <li key={index}>{item}</li>)}
+      </ul>
+    ) : (
+      <p>Chưa có thông tin</p>
+    )}
+  </div>
+);
+
+const testText = "Đây là ví dụ minh họa (Nguồn [3]) cho tính năng.";
+const testSources = [
+  {
+    citationId: 3,
+    documentId: "abc123",
+    title: "Tài liệu mẫu",
+    content_preview: "Đoạn trích liên quan",
+    score: 0.95,
+  },
+];
 
 export const AnalysisPage: React.FC = () => {
-  // --- STATE MANAGEMENT ---
-  // State để lưu trữ dữ liệu phân tích sau khi đã lấy về từ API
-  const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
-  // State để lưu trữ thông báo lỗi nếu có
+  const [analysisData, setAnalysisData] = useState<StructuredAnalysis | null>(null);
+  const [sources, setSources] = useState<CitationSource[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-
-  // --- SIDE EFFECTS ---
-  // useEffect này sẽ chạy 1 lần duy nhất khi component được tải
   useEffect(() => {
-    // 1. Lấy các tham số từ URL của trang
-    const urlParams = new URLSearchParams(window.location.search);
-    const sessionId = urlParams.get('sessionId');
+    document.title = `Đang Phân tích Quy trình...`;
 
-    // 2. Kiểm tra xem có sessionId hay không
-    if (sessionId) {
-      // 3. Nếu có, gọi API để lấy dữ liệu phân tích
-      getSessionData(sessionId, 'analysis')
-        .then(data => {
-          // Nếu thành công, cập nhật state với dữ liệu nhận được
-          setAnalysisData(data);
-          // Cập nhật tiêu đề của tab trình duyệt để người dùng dễ phân biệt
-          document.title = `Phân tích - Session ${sessionId.substring(8, 14)}`;
-        })
-        .catch(err => {
-          // Nếu thất bại, cập nhật state lỗi
-          setError(err.message);
-        });
-    } else {
-      // Nếu không có sessionId trên URL, báo lỗi ngay lập tức
-      setError("Không tìm thấy Session ID trên URL. Vui lòng thử lại từ trang chat.");
+    // 1. Lấy trạng thái từ localStorage
+    const savedStateJSON = localStorage.getItem('analysisState');
+    if (!savedStateJSON) {
+      setError("Không tìm thấy dữ liệu để phân tích. Vui lòng quay lại trang Sơ đồ và thử lại.");
+      setIsLoading(false);
+      return;
     }
-  }, []); // Mảng rỗng `[]` đảm bảo useEffect chỉ chạy 1 lần khi component mount
+
+    const analysisState = JSON.parse(savedStateJSON);
+
+    // 2. TẠO MỘT "CHÌA KHÓA" CACHE DUY NHẤT
+    // Chúng ta sẽ băm (hash) toàn bộ đối tượng trạng thái để tạo ra một khóa đại diện.
+    // Đây là một cách đơn giản để tạo hash. Trong dự án thực tế có thể dùng thư viện như object-hash.
+    const createCacheKey = (state: object): string => {
+      try {
+        const stateString = JSON.stringify(state);
+        // Một hàm hash đơn giản
+        let hash = 0;
+        for (let i = 0; i < stateString.length; i++) {
+          const char = stateString.charCodeAt(i);
+          hash = (hash << 5) - hash + char;
+          hash |= 0; // Chuyển thành số nguyên 32-bit
+        }
+        return `analysis_cache_${hash}`;
+      } catch {
+        return `analysis_cache_default`;
+      }
+    };
+    
+    const cacheKey = createCacheKey(analysisState);
+    console.log("Sử dụng cache key:", cacheKey);
 
 
-  // --- CONDITIONAL RENDERING ---
-  // Ưu tiên hiển thị lỗi nếu có
+    const performAnalysis = async () => {
+      // 3. KIỂM TRA CACHE TRƯỚC KHI GỌI API
+      const cachedResult = localStorage.getItem(cacheKey);
+      if (cachedResult) {
+        console.log("Tìm thấy kết quả phân tích trong cache. Đang sử dụng lại...");
+        const { analysis, sources } = JSON.parse(cachedResult);
+        setAnalysisData(analysis);
+        setSources(sources || []);
+        document.title = `Phân tích (Cache): ${analysis.overview?.process_name || 'Hoàn tất'}`;
+        setIsLoading(false);
+        return; // Dừng lại nếu có cache
+      }
+
+      // 4. NẾU KHÔNG CÓ CACHE, TIẾP TỤC GỌI API
+      console.log("Không có cache. Bắt đầu gọi API phân tích...");
+      try {
+        const response = await fetch(API_ENDPOINTS.analyzeProcess, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(analysisState),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Lỗi từ phía server.');
+        }
+
+        const result: FullAnalysisResponse = await response.json();
+        
+        if (result.success && result.analysis) {
+          // 5. LƯU VÀO CACHE SAU KHI GỌI API THÀNH CÔNG
+          const dataToCache = { analysis: result.analysis, sources: result.sources };
+          localStorage.setItem(cacheKey, JSON.stringify(dataToCache));
+          console.log("Đã lưu kết quả phân tích vào cache.");
+
+          setAnalysisData(result.analysis);
+          setSources(result.sources || []);
+          document.title = `Phân tích: ${result.analysis.overview?.process_name || 'Hoàn tất'}`;
+        } else {
+          throw new Error('Định dạng phản hồi từ API không hợp lệ.');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi không xác định');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    performAnalysis();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="analysis-loading">
+        <h1>Đang thực hiện phân tích chuyên sâu...</h1>
+        <p>AI đang huy động toàn bộ tri thức để đưa ra kết quả tốt nhất. Vui lòng chờ trong giây lát.</p>
+      </div>
+    );
+  }
+
   if (error) {
     return (
-      <div style={{ padding: '20px', fontFamily: 'sans-serif', color: 'red' }}>
+      <div className="analysis-error">
         <h1>Đã xảy ra lỗi</h1>
         <p>{error}</p>
       </div>
     );
   }
-
-  // Hiển thị trạng thái "đang tải" trong khi chờ API trả về dữ liệu
+  
   if (!analysisData) {
-    return (
-      <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-        <h1>Đang tải dữ liệu phân tích...</h1>
-      </div>
-    );
+    return null; 
   }
 
-  // Khi đã có dữ liệu, hiển thị nội dung báo cáo chi tiết
+  // --- PHẦN JSX ĐÃ ĐƯỢC CẬP NHẬT TOÀN BỘ ---
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif', lineHeight: '1.6' }}>
-      <h1>Báo cáo Phân tích Quy trình</h1>
-      
-      <div style={{ marginTop: '30px' }}>
-        <h2>Tóm tắt Quy trình</h2>
-        <p>{analysisData.summary}</p>
-      </div>
+    <div className="analysis-container">
+      <h1>Báo cáo Phân tích Quy trình: {analysisData.overview.process_name}</h1>
 
-      <div style={{ marginTop: '30px' }}>
-        <h2>Đề xuất Cải tiến</h2>
-        <ul>
-          {analysisData.suggestions.map((suggestion, index) => (
-            <li key={`suggestion-${index}`}>{suggestion}</li>
-          ))}
-        </ul>
-      </div>
+      {/* <TextWithCitations text={testText} sources={testSources} /> */}
       
-      <div style={{ marginTop: '30px' }}>
-        <h2>Rủi ro tiềm ẩn & Cảnh báo Tuân thủ</h2>
-        <ul>
-          {analysisData.risks.map((risk, index) => (
-            <li key={`risk-${index}`}>{risk}</li>
-          ))}
-        </ul>
-      </div>
+      {/* <AnalysisSection title="I. Tổng quan (Overview)">
+        <InfoPair label="Mục đích"><TextWithCitations text={analysisData.overview.purpose} sources={sources} /></InfoPair>
+        <InfoPair label="Loại quy trình"><TextWithCitations text={analysisData.overview.process_type} sources={sources} /></InfoPair>
+        <InfoPair label="Phạm vi"><TextWithCitations text={analysisData.overview.scope} sources={sources} /></InfoPair>
+        <InfoPair label="Độ phức tạp"><TextWithCitations text={analysisData.overview.complexity_level} sources={sources} /></InfoPair>
+      </AnalysisSection>
+
+      <AnalysisSection title="II. Phân rã Thành phần (Components)">
+        <InfoPair label="Sự kiện bắt đầu"><TextWithCitations text={analysisData.components.start_event} sources={sources} /></InfoPair>
+        <InfoPair label="Sự kiện kết thúc"><TextWithCitations text={analysisData.components.end_event} sources={sources} /></InfoPair>
+        <InfoList label="Các bên tham gia" items={analysisData.components.actors.map((item, index) => <TextWithCitations key={index} text={item} sources={sources} />)} />
+        <InfoList label="Các bước chính" items={analysisData.components.steps.map((item, index) => <TextWithCitations key={index} text={item} sources={sources} />)} />
+        <InfoPair label="Trình tự thực hiện"><TextWithCitations text={analysisData.components.sequence} sources={sources} /></InfoPair>
+      </AnalysisSection>
+
+      <AnalysisSection title="III. Đánh giá (Evaluation)">
+        <InfoPair label="Tính logic & Mạch lạc"><TextWithCitations text={analysisData.evaluation.logic_coherence} sources={sources} /></InfoPair>
+        <InfoPair label="Tính đầy đủ"><TextWithCitations text={analysisData.evaluation.completeness} sources={sources} /></InfoPair>
+        <InfoList label="Rủi ro tiềm ẩn" items={analysisData.evaluation.risks.map((item, index) => <TextWithCitations key={index} text={item} sources={sources} />)} />
+        <InfoList label="Các điểm kiểm soát" items={analysisData.evaluation.controls.map((item, index) => <TextWithCitations key={index} text={item} sources={sources} />)} />
+        <InfoPair label="Phân tích Tuân thủ"><TextWithCitations text={analysisData.evaluation.compliance} sources={sources} /></InfoPair>
+      </AnalysisSection>
+
+      <AnalysisSection title="IV. Đề xuất Cải tiến (Improvement)">
+        <InfoList label="Điểm nghẽn (Bottlenecks)" items={analysisData.improvement.bottlenecks.map((item, index) => <TextWithCitations key={index} text={item} sources={sources} />)} />
+        <InfoList label="Cơ hội Tối ưu hóa" items={analysisData.improvement.optimization_opportunities.map((item, index) => <TextWithCitations key={index} text={item} sources={sources} />)} />
+        <InfoPair label="Khả năng Tự động hóa"><TextWithCitations text={analysisData.improvement.automation_possibility} sources={sources} /></InfoPair>
+        <InfoList label="Chỉ số Đo lường (KPIs)" items={analysisData.improvement.kpis.map((item, index) => <TextWithCitations key={index} text={item} sources={sources} />)} />
+      </AnalysisSection>
+
+      <AnalysisSection title="V. Kết luận (Summary)">
+        <InfoPair label="Tóm tắt chung"><TextWithCitations text={analysisData.summary.conclusion} sources={sources} /></InfoPair>
+        <InfoList label="Khuyến nghị chính" items={analysisData.summary.recommendations.map((item, index) => <TextWithCitations key={index} text={item} sources={sources} />)} />
+      </AnalysisSection>
+
+      <AnalysisSection title="VI. Nguồn Tri Thức Đã Tham Khảo">
+        <div className="sources-list">
+          {sources.length > 0 ? (
+            <table>
+              <thead><tr><th>#</th><th>Tên tài liệu</th><th>Trích đoạn liên quan</th><th>Độ liên quan</th></tr></thead>
+              <tbody>
+                {sources.map(source => (
+                  <tr key={source.citationId}>
+                    <td><Link to={`/documents/${source.documentId}?highlight=${encodeURIComponent(source.content_preview)}`}>[{source.citationId}]</Link></td>
+                    <td><Link to={`/documents/${source.documentId}`}>{source.title}</Link></td>
+                    <td><em>"{source.content_preview}"</em></td>
+                    <td>{source.score.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : <p>Phân tích này không sử dụng nguồn tri thức nào.</p>}
+        </div>
+      </AnalysisSection> */}
     </div>
   );
 };

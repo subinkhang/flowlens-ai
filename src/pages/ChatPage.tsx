@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-
 import "./css/ChatPage.css";
-import type { Message } from "../components/Chat/types";
 import { generateSessionId } from "../utils/sessionId";
 import { generateDiagram } from "../api/diagramApi";
 import { MessageList } from "../components/Chat/MessageList";
@@ -9,41 +7,80 @@ import { Suggestions } from "../components/Chat/Suggestions";
 import { ChatInput } from "../components/Chat/ChatInput";
 import { isVietnameseText } from "../utils/isVietnameseText";
 
+// --- STEP 1: ĐỊNH NGHĨA CÁC KIỂU DỮ LIỆU VÀ KHÓA CACHE ---
+export interface Message {
+  id: number;
+  text: string;
+  sender: "user" | "ai";
+}
+export const TAG_SUGGESTIONS = ["@diagram", "@ask", "@improve"];
+
+// Đặt tên cho khóa localStorage để dễ quản lý
+const CHAT_HISTORY_KEY = 'flowlens_chat_history';
+const SESSION_ID_KEY = 'flowlens_session_id';
+
+
 export const ChatPage: React.FC = () => {
+  // State management không thay đổi
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [, setSessionId] = useState("");
+  const [sessionId, setSessionId] = useState(""); // Vẫn giữ sessionId
   const messageListRef = useRef<HTMLDivElement>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+
+  // --- STEP 2: CẬP NHẬT useEffect KHỞI TẠO ĐỂ ĐỌC TỪ CACHE ---
+  useEffect(() => {
+    // Ưu tiên đọc lịch sử chat và session ID từ cache
+    const cachedMessages = localStorage.getItem(CHAT_HISTORY_KEY);
+    const cachedSessionId = localStorage.getItem(SESSION_ID_KEY);
+
+    if (cachedMessages && cachedSessionId) {
+      console.log("Đã tìm thấy lịch sử chat trong cache. Đang khôi phục...");
+      setMessages(JSON.parse(cachedMessages));
+      setSessionId(cachedSessionId);
+    } else {
+      // Nếu không có cache, mới tạo một phiên làm việc mới
+      console.log("Không có cache. Đang tạo phiên làm việc mới...");
+      const newSessionId = generateSessionId();
+      setSessionId(newSessionId);
+      setMessages([
+        {
+          id: 1,
+          text: `Chào mừng bạn! Một phiên làm việc mới đã được tạo với ID: ${newSessionId.substring(
+            0,
+            18
+          )} ... Gõ @ để xem lệnh.`,
+          sender: "ai",
+        },
+      ]);
+    }
+  }, []); // Mảng dependency rỗng đảm bảo chỉ chạy 1 lần duy nhất
+
+  // --- STEP 3: THÊM useEffect ĐỂ TỰ ĐỘNG LƯU VÀO CACHE ---
+  useEffect(() => {
+    // Hook này sẽ chạy mỗi khi `messages` hoặc `sessionId` thay đổi.
+    // Chúng ta chỉ lưu khi có ít nhất 1 tin nhắn và đã có session ID.
+    if (messages.length > 0 && sessionId) {
+      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+      localStorage.setItem(SESSION_ID_KEY, sessionId);
+      console.log("Đã cập nhật lịch sử chat vào cache.");
+    }
+  }, [messages, sessionId]); // Dependencies
+
+  // useEffect để cuộn xuống cuối cùng không thay đổi
+  useEffect(() => {
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+  }, [messages, isLoading]);
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && !isLoading) {
       handleSendMessage();
     }
   };
-
-  useEffect(() => {
-    const newSessionId = generateSessionId();
-    setSessionId(newSessionId);
-    setMessages([
-      {
-        id: 1,
-        text: `Chào mừng bạn! Một phiên làm việc mới đã được tạo với ID: ${newSessionId.substring(
-          0,
-          18
-        )} ... Gõ @ để xem lệnh.`,
-        sender: "ai",
-      },
-    ]);
-  }, []);
-
-  useEffect(() => {
-    if (messageListRef.current) {
-      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
-    }
-  }, [messages, isLoading]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

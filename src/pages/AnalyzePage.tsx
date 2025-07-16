@@ -23,16 +23,52 @@ const AnalyzePage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!analysisData) {
-      const stored = localStorage.getItem("analyzeState");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed?.nodes || parsed?.edges || parsed?.question) {
-          runAnalysis(parsed.nodes, parsed.edges, parsed.question);
+    // Đặt một cái tên rõ ràng cho hàm xử lý logic
+    const initializeAndRunAnalysis = () => {
+        // Lấy dữ liệu đã được lưu từ trang Diagram
+        const storedState = localStorage.getItem("analysisState");
+
+        // Nếu không có dữ liệu, dừng lại và báo lỗi (hook sẽ tự set state error)
+        if (!storedState) {
+            console.error("Không tìm thấy 'analysisState' trong localStorage. Không thể chạy phân tích.");
+            // Bạn có thể set một lỗi cụ thể ở đây nếu muốn
+            // setError("Không tìm thấy dữ liệu để phân tích. Vui lòng bắt đầu lại.");
+            return;
         }
-      }
-    }
-  }, [analysisData, runAnalysis]);
+
+        try {
+            const parsedPayload = JSON.parse(storedState);
+
+            // Kiểm tra cấu trúc cơ bản của dữ liệu đã parse
+            if (parsedPayload && parsedPayload.diagram) {
+                // Lấy các giá trị ra, cung cấp giá trị mặc định để tránh lỗi
+                const nodes = parsedPayload.diagram?.nodes || [];
+                const edges = parsedPayload.diagram?.edges || [];
+                const question = parsedPayload.question || "Hãy phân tích sơ đồ này.";
+                const selectedDocumentIds = parsedPayload.selectedDocumentIds || [];
+                
+                // Gọi hàm phân tích với các tham số đã được chuẩn hóa
+                runAnalysis(nodes, edges, selectedDocumentIds, question);
+            } else {
+                // Nếu dữ liệu có nhưng cấu trúc sai, ném lỗi
+                throw new Error("Dữ liệu trong localStorage có cấu trúc không hợp lệ.");
+            }
+        } catch (e) {
+            // Nếu JSON.parse thất bại, bắt lỗi
+            console.error("Lỗi khi parse dữ liệu từ localStorage:", e);
+            //setError("Dữ liệu phân tích đã lưu bị lỗi, không thể đọc được.");
+        }
+    };
+    
+    // Gọi hàm xử lý logic
+    initializeAndRunAnalysis();
+
+    // Set timestamp
+    setTimestamp(new Date().toLocaleString("vi-VN", {
+        dateStyle: "full",
+        timeStyle: "short",
+    }));
+  }, []);
 
   if (loading)
     return (
@@ -85,6 +121,7 @@ const AnalyzePage: React.FC = () => {
       </div>
     );
 
+  console.log("analysisData", analysisData);
   if (!analysisData || !analysisData.analysis) {
     return (
       <div className="flex flex-col items-center justify-center h-screen text-gray-600">
@@ -111,6 +148,17 @@ const AnalyzePage: React.FC = () => {
 
   const { analysis, sources } = analysisData;
 
+  const testText = "Đây là ví dụ minh họa (Nguồn [3]) cho tính năng.";
+  const testSources = [
+    {
+      citationId: 3,
+      documentId: "abc123",
+      title: "Tài liệu mẫu",
+      content_preview: "Đoạn trích liên quan",
+      score: 0.95,
+    },
+  ];
+
   return (
     <div className="p-4 bg-gray-100 min-h-screen">
       <h1 className="text-3xl font-bold text-gray-800 mb-2">
@@ -119,12 +167,13 @@ const AnalyzePage: React.FC = () => {
       <p className="text-sm text-gray-600 mb-6">
         Thời gian tạo báo cáo: {timestamp}
       </p>
+      {/* TRUYỀN `sources` VÀO CÁC COMPONENT CON */}
       <ReportOverview overview={analysis.overview} />
       <ReportComponents components={analysis.components} />
       <ReportExecution execution={analysis.execution} />
-      <ReportEvaluation evaluation={analysis.evaluation} />
-      <ReportImprovement improvement={analysis.improvement} />
-      <ReportSummary summary={analysis.summary} />
+      <ReportEvaluation evaluation={analysis.evaluation} sources={sources} />
+      <ReportImprovement improvement={analysis.improvement} sources={sources} />
+      <ReportSummary summary={analysis.summary} sources={sources} />
       <ReportSources sources={sources} />
     </div>
   );
