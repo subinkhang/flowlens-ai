@@ -1,20 +1,35 @@
 import { createBrowserRouter } from "react-router-dom";
-import { DiagramPage } from "../pages/DiagramPage";
-import { ChatPage } from "../pages/ChatPage";
-import AnalyzePage from "../pages/AnalyzePage";
+import RedirectToNewSession from "../components/Redirect/RedirectToNewSession";
+import ChatPageWrapper from "../pages/wrapper/ChatPageWrapper";
+import DiagramPageWrapper from "../pages/wrapper/DiagramPageWrapper";
+import AnalyzePageWrapper from "../pages/wrapper/AnalyzePageWrapper";
+
 import DocumentsPage from '../pages/DocumentsPage';
 import DocumentDetailPage from '../pages/DocumentDetailPage';
 
 const router = createBrowserRouter([
-  { children: [{ element: <ChatPage />, path: "/" }] },
-  {
-    element: <DiagramPage />,
-    path: "/diagram",
+  { 
+    path: "/", 
+    element: <RedirectToNewSession /> 
   },
-  {
-    element: <AnalyzePage />,
-    path: "/analyze",
+  { 
+    path: "/chat", 
+    element: <RedirectToNewSession /> 
   },
+
+  { 
+    path: "/chat/:sessionId", 
+    element: <ChatPageWrapper /> 
+  },
+  { 
+    path: "/diagram/:sessionId", 
+    element: <DiagramPageWrapper /> 
+  },
+  { 
+    path: "/analyze/:sessionId", 
+    element: <AnalyzePageWrapper /> 
+  },
+
   {
     path: "/documents",
     element: <DocumentsPage />,

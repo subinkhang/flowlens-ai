@@ -5,7 +5,8 @@ import { useNavigate } from "react-router-dom";
 export const DiagramFooter: React.FC<{
   onExport: () => void;
   onAnalyze: (question: string) => void;
-}> = ({ onExport, onAnalyze }) => {
+  onNavigateToDocuments: () => void;
+}> = ({ onExport, onAnalyze, onNavigateToDocuments }) => {
   const [question, setQuestion] = useState("");
   // 2. Khởi tạo navigate
   const navigate = useNavigate();
@@ -13,12 +14,6 @@ export const DiagramFooter: React.FC<{
   const handleAnalyzeClick = () => {
     onAnalyze(question.trim());
     setQuestion("");
-  };
-
-  // 3. Tạo hàm xử lý sự kiện cho nút mới
-  const handleSelectSourcesClick = () => {
-    // Điều hướng đến trang chọn tài liệu
-    navigate('/documents');
   };
 
   return (
@@ -42,7 +37,7 @@ export const DiagramFooter: React.FC<{
       </div>
 
       {/* 4. Thêm nút mới vào giữa hai nút cũ */}
-      <button onClick={handleSelectSourcesClick} className="select-source-button">
+      <button onClick={onNavigateToDocuments} className="select-source-button">
         Chọn Nguồn Tri Thức
       </button>
 

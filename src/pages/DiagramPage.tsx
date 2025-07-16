@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
 // 1. Import thêm useLocation
-import { useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ReactFlow, {
   useNodesState,
   useEdgesState,
@@ -14,6 +14,7 @@ import ReactFlow, {
   type Edge,
   type Connection,
 } from "reactflow";
+import { useSession } from "../hooks/useSession";
 import { DiagramHeader } from "../components/Diagram/DiagramHeader";
 import { DiagramFooter } from "../components/Diagram/DiagramFooter";
 import "reactflow/dist/style.css";
@@ -22,32 +23,30 @@ import { CustomEdge } from "../components/CustomEdge";
 import { useDiagramData } from "../hooks/useDiagram";
 import { ConditionPanel } from "../components/ConditionPanel";
 import type { DiagramEdge, DiagramNode, Rule } from "../types/ApiResponse";
-import { useSession } from "../hooks/useSession";
 
+// Các hằng số giữ nguyên
 const edgeTypes = { custom: CustomEdge };
 let nodeIdCounter = 5;
 
 export const DiagramPage: React.FC = () => {
+  // --- LẤY DỮ LIỆU TỪ CÁC HOOK ---
   const { initialData, error } = useDiagramData();
+  const { sessionId } = useSession();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
-  const { sessionId } = useSession();
-
-  // 2. Thêm state mới để lưu các ID tài liệu đã chọn
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
 
-  // 3. Dùng useLocation để lấy state từ navigation
-  const location = useLocation();
-
-  // 4. Dùng useEffect để cập nhật state khi người dùng quay lại từ trang documents
   useEffect(() => {
     if (location.state && location.state.selectedDocumentIds) {
       const ids: string[] = location.state.selectedDocumentIds;
       setSelectedDocumentIds(ids);
       console.log("Đã nhận các ID tài liệu được chọn:", ids);
     }
-  }, [location.state]); // Chạy lại effect khi location.state thay đổi
+  }, [location.state]);
 
   useEffect(() => {
     if (initialData) {
@@ -78,6 +77,15 @@ export const DiagramPage: React.FC = () => {
       nodeIdCounter = normalizedNodes.length + 1;
     }
   }, [initialData, setNodes, setEdges]);
+
+  const handleNavigateToDocuments = () => {
+    // Khi đi đến trang documents, gửi kèm sessionId hiện tại
+    navigate('/documents', { 
+      state: { 
+        fromSessionId: sessionId 
+      } 
+    });
+  };
 
   const onConnect = useCallback(
     (params: Connection) => {
@@ -165,23 +173,19 @@ export const DiagramPage: React.FC = () => {
   // 5. Cập nhật hàm onAnalyze để bao gồm cả `selectedDocumentIds`
   const onAnalyze = useCallback(
     (question: string) => {
-      // Lấy dữ liệu sơ đồ sạch
       const diagramData = getCleanedDiagramData();
 
-      // Tạo một đối tượng state hoàn chỉnh để gửi đi
       const analysisState = {
         diagram: diagramData,
         question: question,
-        selectedDocumentIds: selectedDocumentIds, // Thêm ID vào đây
+        selectedDocumentIds: selectedDocumentIds,
       };
 
-      // Lưu state vào localStorage để trang /analyze có thể đọc
       localStorage.setItem("analysisState", JSON.stringify(analysisState));
       
-      // Mở trang phân tích trong tab mới
-      window.open("/analyze", "_blank");
+      window.open(`/analyze/${sessionId}`, "_blank");
     },
-    [getCleanedDiagramData, selectedDocumentIds] // Thêm selectedDocumentIds vào dependencies
+    [getCleanedDiagramData, selectedDocumentIds, sessionId] 
   );
 
   if (error) {
@@ -206,7 +210,6 @@ export const DiagramPage: React.FC = () => {
     <div className="diagram-page">
       <DiagramHeader onAddNode={onAddNode} />
 
-      {/* 6. Thêm phần hiển thị thông báo về các nguồn đã chọn */}
       {selectedDocumentIds.length > 0 && (
         <div className="info-banner">
           Đang áp dụng phân tích với <strong>{selectedDocumentIds.length}</strong> nguồn tri thức đã chọn.
@@ -236,7 +239,7 @@ export const DiagramPage: React.FC = () => {
           onClose={() => setSelectedEdge(null)}
         />
       )}
-      <DiagramFooter onExport={onExport} onAnalyze={onAnalyze} />
+      <DiagramFooter onExport={onExport} onAnalyze={onAnalyze} onNavigateToDocuments={handleNavigateToDocuments} />
     </div>
   );
 };
