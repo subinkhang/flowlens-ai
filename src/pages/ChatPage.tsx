@@ -8,6 +8,7 @@ import { MessageList } from "../components/Chat/MessageList";
 import { Suggestions } from "../components/Chat/Suggestions";
 import { ChatInput } from "../components/Chat/ChatInput";
 import { isVietnameseText } from "../utils/isVietnameseText";
+import { History } from "../components/History/History";
 
 // --- ĐỊNH NGHĨA KIỂU DỮ LIỆU VÀ TAGS ---
 export interface Message {
@@ -18,7 +19,8 @@ export interface Message {
 export const TAG_SUGGESTIONS = ["@diagram", "@ask", "@improve"];
 
 // Hàm helper để tạo khóa cache động dựa trên sessionId
-const createChatCacheKey = (sessionId: string) => `flowlens_chat_history_${sessionId}`;
+const createChatCacheKey = (sessionId: string) =>
+  `flowlens_chat_history_${sessionId}`;
 
 export const ChatPage: React.FC = () => {
   const { sessionId } = useParams<{ sessionId?: string }>();
@@ -43,14 +45,19 @@ export const ChatPage: React.FC = () => {
     const cachedMessages = localStorage.getItem(cacheKey);
 
     if (cachedMessages) {
-      console.log(`Đã tìm thấy lịch sử chat cho session ${sessionId}. Đang khôi phục...`);
+      console.log(
+        `Đã tìm thấy lịch sử chat cho session ${sessionId}. Đang khôi phục...`
+      );
       setMessages(JSON.parse(cachedMessages));
     } else {
       console.log(`Tạo phiên làm việc mới cho session ${sessionId}.`);
       setMessages([
         {
           id: 1,
-          text: `🎯 Phiên làm việc: ${sessionId.substring(0, 18)}... Gõ @ để xem lệnh.`,
+          text: `🎯 Phiên làm việc: ${sessionId.substring(
+            0,
+            18
+          )}... Gõ @ để xem lệnh.`,
           sender: "ai",
         },
       ]);
@@ -63,7 +70,9 @@ export const ChatPage: React.FC = () => {
     if (sessionId && messages.length > 0) {
       const cacheKey = createChatCacheKey(sessionId);
       localStorage.setItem(cacheKey, JSON.stringify(messages));
-      console.log(`Đã cập nhật lịch sử chat cho session ${sessionId} vào cache.`);
+      console.log(
+        `Đã cập nhật lịch sử chat cho session ${sessionId} vào cache.`
+      );
     }
   }, [messages, sessionId]); // Theo dõi sự thay đổi của messages và sessionId
 
@@ -171,7 +180,10 @@ export const ChatPage: React.FC = () => {
           window.open(`/diagram/${sessionId}?type=image`, "_blank");
         } else {
           const inputData = encodeURIComponent(payload);
-          window.open(`/diagram/${sessionId}?type=text&q=${inputData}`, "_blank");
+          window.open(
+            `/diagram/${sessionId}?type=text&q=${inputData}`,
+            "_blank"
+          );
         }
       } catch {
         setMessages((prev) => [
@@ -204,31 +216,43 @@ export const ChatPage: React.FC = () => {
 
   // --- PHẦN JSX RENDER (KHÔNG THAY ĐỔI) ---
   return (
-    <div className="chat-page">
-      <MessageList
-        messages={messages}
-        isLoading={isLoading}
-        messageListRef={messageListRef}
-      />
-
-      <div className="input-area">
-        {showSuggestions && <Suggestions onClickTag={handleSuggestionClick} />}
-
-        <ChatInput
-          inputText={inputText}
-          isLoading={isLoading}
-          onInputChange={handleInputChange}
-          onKeyPress={handleKeyPress}
-          onSend={handleSendMessage}
-          onFileUpload={(base64) => {
-            setImageBase64(base64);
+    <div className="chat-layout">
+      {/* Sidebar trái */}
+      <aside className="chat-sidebar-left">
+        <History
+          onSelect={(selectedId) => {
+            navigate(`/chat/${selectedId}`);
           }}
-          imageBase64={imageBase64}
-          setImageBase64={setImageBase64}
         />
-      </div>
+      </aside>
 
-      <aside className="chat-sidebar">
+      {/* Khu vực chính */}
+      <main className="chat-main">
+        <MessageList
+          messages={messages}
+          isLoading={isLoading}
+          messageListRef={messageListRef}
+        />
+
+        <div className="input-area">
+          {showSuggestions && (
+            <Suggestions onClickTag={handleSuggestionClick} />
+          )}
+          <ChatInput
+            inputText={inputText}
+            isLoading={isLoading}
+            onInputChange={handleInputChange}
+            onKeyPress={handleKeyPress}
+            onSend={handleSendMessage}
+            onFileUpload={(base64) => setImageBase64(base64)}
+            imageBase64={imageBase64}
+            setImageBase64={setImageBase64}
+          />
+        </div>
+      </main>
+
+      {/* Sidebar phải */}
+      <aside className="chat-sidebar-right">
         <h3 className="sidebar-title">Công cụ</h3>
         <div className="sidebar-buttons">
           <Link to={`/diagram/${sessionId}`} className="sidebar-button">
