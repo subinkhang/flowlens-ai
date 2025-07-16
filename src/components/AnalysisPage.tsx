@@ -1,81 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../api/endpoints';
 import './css/AnalysisPage.css';
-import type { StructuredAnalysis, CitationSource, FullAnalysisResponse } from '../types/ApiResponse';
+import type { StructuredAnalysis, FullAnalysisResponse } from '../types/ApiResponse';
 
-// --- CÁC COMPONENT CON ---
-
-const AnalysisSection: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div className="analysis-section">
-    <h2>{title}</h2>
-    {children}
-  </div>
-);
-
-const TextWithCitations: React.FC<{ text: string; sources: CitationSource[] }> = ({ text, sources }) => {
-  if (!text) return <p>Chưa có thông tin</p>;
-
-  const renderedText = useMemo(() => {
-    const citationRegex = /\(Ngu[ồo]n\s*\[(\d+)\]\)/g;
-    const parts = text.split(citationRegex);
-    
-    return parts.map((part, index) => {
-      if (index % 2 === 1) {
-        const citationId = parseInt(part, 10);
-        const source = sources.find(s => s.citationId === citationId);
-        
-        if (source) {
-          const targetUrl = `https://fg9om4dvnk.execute-api.us-east-1.amazonaws.com/prod/documents/${source.documentId}?highlight=${encodeURIComponent(source.content_preview)}`;
-          return (
-            <Link key={index} to={targetUrl} className="citation-link" title={`Trích từ: ${source.title}\n\n"${source.content_preview}"`}>
-              [{citationId}]
-            </Link>
-          );
-        }
-        return `[${part}]`;
-      }
-      return part;
-    });
-  }, [text, sources]);
-
-  return <p>{renderedText}</p>;
-};
-
-const InfoPair: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div className="info-pair">
-    <strong>{label}:</strong>
-    {children}
-  </div>
-);
-
-const InfoList: React.FC<{ label: string; items: React.ReactNode[] }> = ({ label, items }) => (
-  <div className="info-list">
-    <strong>{label}:</strong>
-    {items && items.length > 0 ? (
-      <ul>
-        {items.map((item, index) => <li key={index}>{item}</li>)}
-      </ul>
-    ) : (
-      <p>Chưa có thông tin</p>
-    )}
-  </div>
-);
-
-const testText = "Đây là ví dụ minh họa (Nguồn [3]) cho tính năng.";
-const testSources = [
-  {
-    citationId: 3,
-    documentId: "abc123",
-    title: "Tài liệu mẫu",
-    content_preview: "Đoạn trích liên quan",
-    score: 0.95,
-  },
-];
 
 export const AnalysisPage: React.FC = () => {
   const [analysisData, setAnalysisData] = useState<StructuredAnalysis | null>(null);
-  const [sources, setSources] = useState<CitationSource[]>([]);
+  // const [sources, setSources] = useState<CitationSource[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -120,9 +51,8 @@ export const AnalysisPage: React.FC = () => {
       const cachedResult = localStorage.getItem(cacheKey);
       if (cachedResult) {
         console.log("Tìm thấy kết quả phân tích trong cache. Đang sử dụng lại...");
-        const { analysis, sources } = JSON.parse(cachedResult);
+        const { analysis } = JSON.parse(cachedResult);
         setAnalysisData(analysis);
-        setSources(sources || []);
         document.title = `Phân tích (Cache): ${analysis.overview?.process_name || 'Hoàn tất'}`;
         setIsLoading(false);
         return; // Dừng lại nếu có cache
@@ -151,7 +81,7 @@ export const AnalysisPage: React.FC = () => {
           console.log("Đã lưu kết quả phân tích vào cache.");
 
           setAnalysisData(result.analysis);
-          setSources(result.sources || []);
+          // setSources(result.sources || []);
           document.title = `Phân tích: ${result.analysis.overview?.process_name || 'Hoàn tất'}`;
         } else {
           throw new Error('Định dạng phản hồi từ API không hợp lệ.');
