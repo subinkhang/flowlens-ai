@@ -26,12 +26,12 @@ const DocumentDetailPage: React.FC = () => {
       setError(null);
       try {
         // Gọi hàm để tạo URL động
-        const apiUrl = API_ENDPOINTS.getDocumentDetail(documentId);
+        const apiUrl = API_ENDPOINTS.getDocumentById(documentId);
         const response = await fetch(apiUrl);
 
         if (!response.ok) {
-           if (response.status === 404) throw new Error('Tài liệu không tồn tại trong hệ thống.');
-           throw new Error('Không thể tải chi tiết tài liệu.');
+          if (response.status === 404) throw new Error('Tài liệu không tồn tại trong hệ thống.');
+          throw new Error('Không thể tải chi tiết tài liệu.');
         }
         const data: Document = await response.json();
         setDocument(data);

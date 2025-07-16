@@ -91,7 +91,7 @@ def retrieve_from_knowledge_base_with_sources(diagram_json: Dict, question: str,
     # === THAY ĐỔI 2: XÂY DỰNG CẤU HÌNH TRUY XUẤT ĐỘNG VỚI BỘ LỌC ===
     retrieval_config = {
         'vectorSearchConfiguration': {
-            'numberOfResults': 6,
+            'numberOfResults': 4,
             'overrideSearchType': 'HYBRID'
         }
     }

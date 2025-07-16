@@ -1,4 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react";
+// 1. Import thêm useLocation
+import { useLocation } from "react-router-dom";
 import ReactFlow, {
   useNodesState,
   useEdgesState,
@@ -29,6 +31,21 @@ export const DiagramPage: React.FC = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
+
+  // 2. Thêm state mới để lưu các ID tài liệu đã chọn
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+
+  // 3. Dùng useLocation để lấy state từ navigation
+  const location = useLocation();
+
+  // 4. Dùng useEffect để cập nhật state khi người dùng quay lại từ trang documents
+  useEffect(() => {
+    if (location.state && location.state.selectedDocumentIds) {
+      const ids: string[] = location.state.selectedDocumentIds;
+      setSelectedDocumentIds(ids);
+      console.log("Đã nhận các ID tài liệu được chọn:", ids);
+    }
+  }, [location.state]); // Chạy lại effect khi location.state thay đổi
 
   useEffect(() => {
     if (initialData) {
@@ -119,7 +136,7 @@ export const DiagramPage: React.FC = () => {
     setNodes((nds) => nds.concat(newNode));
   }, [setNodes]);
 
-  const onExport = useCallback(() => {
+  const getCleanedDiagramData = useCallback(() => {
     const cleanedNodes = nodes.map(({ id, type, data, position }) => ({
       id,
       type,
@@ -133,19 +150,36 @@ export const DiagramPage: React.FC = () => {
       type,
       data,
     }));
-    const goldenFlowData = { nodes: cleanedNodes, edges: cleanedEdges };
+    return { nodes: cleanedNodes, edges: cleanedEdges };
+  }, [nodes, edges]);
+
+  const onExport = useCallback(() => {
+    const goldenFlowData = getCleanedDiagramData();
     console.log("--- GOLDEN JSON ---");
     console.log(JSON.stringify(goldenFlowData, null, 2));
     alert("Đã xuất 'Golden JSON' sạch sẽ ra Console!");
-  }, [nodes, edges]);
+  }, [getCleanedDiagramData]);
 
+  // 5. Cập nhật hàm onAnalyze để bao gồm cả `selectedDocumentIds`
   const onAnalyze = useCallback(
     (question: string) => {
-      const state = { nodes, edges, question };
-      localStorage.setItem("analyzeState", JSON.stringify(state));
+      // Lấy dữ liệu sơ đồ sạch
+      const diagramData = getCleanedDiagramData();
+
+      // Tạo một đối tượng state hoàn chỉnh để gửi đi
+      const analysisState = {
+        diagram: diagramData,
+        question: question,
+        selectedDocumentIds: selectedDocumentIds, // Thêm ID vào đây
+      };
+
+      // Lưu state vào localStorage để trang /analyze có thể đọc
+      localStorage.setItem("analysisState", JSON.stringify(analysisState));
+      
+      // Mở trang phân tích trong tab mới
       window.open("/analyze", "_blank");
     },
-    [nodes, edges]
+    [getCleanedDiagramData, selectedDocumentIds] // Thêm selectedDocumentIds vào dependencies
   );
 
   if (error) {
@@ -169,6 +203,14 @@ export const DiagramPage: React.FC = () => {
   return (
     <div className="diagram-page">
       <DiagramHeader onAddNode={onAddNode} />
+
+      {/* 6. Thêm phần hiển thị thông báo về các nguồn đã chọn */}
+      {selectedDocumentIds.length > 0 && (
+        <div className="info-banner">
+          Đang áp dụng phân tích với <strong>{selectedDocumentIds.length}</strong> nguồn tri thức đã chọn.
+        </div>
+      )}
+
       <ReactFlow
         nodes={nodes}
         edges={edges}

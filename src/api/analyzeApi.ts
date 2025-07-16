@@ -16,6 +16,7 @@ export interface AnalyzeDiagramPayload {
 export const analyzeDiagram = async (
   payload: AnalyzeDiagramPayload
 ): Promise<AnalysisResponse> => {
+  console.log('--- [API LAYER] --- Gửi payload đến backend:', payload);
   try {
     console.log("📤 Sending analysis request to:", ANALYZE_API);
     console.log("📦 Request body:", payload);

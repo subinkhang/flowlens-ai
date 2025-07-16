@@ -17,6 +17,7 @@ export const useDiagramAnalysis = () => {
   const runAnalysis = async (
     nodes: DiagramNode[],
     edges: DiagramEdge[],
+    selectedDocumentIds: string[], 
     question?: string
   ): Promise<AnalysisResponse> => {
     setLoading(true);
@@ -25,10 +26,12 @@ export const useDiagramAnalysis = () => {
     try {
       const payload = {
         diagram: { nodes, edges },
+        selectedDocumentIds: selectedDocumentIds,
         ...(question?.trim() && { question }),
       };
 
       const response = await analyzeDiagram(payload);
+      console.log('--- [HOOK] --- API trả về response:', response);
       setAnalysisData(response);
       return response;
     } catch (err: unknown) {
