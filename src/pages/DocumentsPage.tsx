@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 // 1. Import thêm useNavigate và useLocation
 import { useNavigate, useLocation } from 'react-router-dom';
-import type { Document } from '../types/document';
+import type { Document } from '../types/ApiResponse';
 import DocumentItem from '../components/DocumentItem';
 import DocumentUpload from '../components/DocumentUpload';
 import { API_ENDPOINTS } from '../api/endpoints';
@@ -14,6 +14,9 @@ const DocumentsPage: React.FC = () => {
 
   // 2. Khởi tạo navigate
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  const fromSessionId = location.state?.fromSessionId;
 
   // Hàm để gọi API và lấy danh sách tài liệu
   const fetchDocuments = async () => {
@@ -66,9 +69,14 @@ const DocumentsPage: React.FC = () => {
   const handleConfirmSelection = () => {
     // Chuyển Set thành Array để gửi đi
     const selectedIdsArray = Array.from(selectedIds);
+
+    if (!fromSessionId) {
+      navigate('/');
+      return;
+    }
     
     // Quay lại trang diagram và gửi kèm state
-    navigate('/diagram', { 
+    navigate(`/diagram/${fromSessionId}`, { 
       state: { 
         selectedDocumentIds: selectedIdsArray 
       } 

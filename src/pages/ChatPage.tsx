@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+// Import các hook từ react-router-dom
+import { useNavigate, useParams } from "react-router-dom";
 import "./css/ChatPage.css";
 import { generateSessionId } from "../utils/sessionId";
 import { generateDiagram } from "../api/diagramApi";
@@ -7,7 +9,7 @@ import { Suggestions } from "../components/Chat/Suggestions";
 import { ChatInput } from "../components/Chat/ChatInput";
 import { isVietnameseText } from "../utils/isVietnameseText";
 
-// --- STEP 1: ĐỊNH NGHĨA CÁC KIỂU DỮ LIỆU VÀ KHÓA CACHE ---
+// --- ĐỊNH NGHĨA KIỂU DỮ LIỆU VÀ TAGS ---
 export interface Message {
   id: number;
   text: string;
@@ -15,67 +17,65 @@ export interface Message {
 }
 export const TAG_SUGGESTIONS = ["@diagram", "@ask", "@improve"];
 
-// Đặt tên cho khóa localStorage để dễ quản lý
-const CHAT_HISTORY_KEY = 'flowlens_chat_history';
-const SESSION_ID_KEY = 'flowlens_session_id';
+// Hàm helper để tạo khóa cache động dựa trên sessionId
+const createChatCacheKey = (sessionId: string) => `flowlens_chat_history_${sessionId}`;
 
 
 export const ChatPage: React.FC = () => {
-  // State management không thay đổi
+  const { sessionId } = useParams<{ sessionId?: string }>();
+  const navigate = useNavigate();
+
+  // --- STATE MANAGEMENT ---
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [sessionId, setSessionId] = useState(""); // Vẫn giữ sessionId
   const messageListRef = useRef<HTMLDivElement>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
 
-  // --- STEP 2: CẬP NHẬT useEffect KHỞI TẠO ĐỂ ĐỌC TỪ CACHE ---
   useEffect(() => {
-    // Ưu tiên đọc lịch sử chat và session ID từ cache
-    const cachedMessages = localStorage.getItem(CHAT_HISTORY_KEY);
-    const cachedSessionId = localStorage.getItem(SESSION_ID_KEY);
+    if (!sessionId) {
+      const newId = generateSessionId();
+      navigate(`/chat/${newId}`, { replace: true });
+      return; // Dừng lại để chờ component re-render với sessionId mới
+    }
 
-    if (cachedMessages && cachedSessionId) {
-      console.log("Đã tìm thấy lịch sử chat trong cache. Đang khôi phục...");
+    const cacheKey = createChatCacheKey(sessionId);
+    const cachedMessages = localStorage.getItem(cacheKey);
+
+    if (cachedMessages) {
+      console.log(`Đã tìm thấy lịch sử chat cho session ${sessionId}. Đang khôi phục...`);
       setMessages(JSON.parse(cachedMessages));
-      setSessionId(cachedSessionId);
     } else {
-      // Nếu không có cache, mới tạo một phiên làm việc mới
-      console.log("Không có cache. Đang tạo phiên làm việc mới...");
-      const newSessionId = generateSessionId();
-      setSessionId(newSessionId);
+      console.log(`Tạo phiên làm việc mới cho session ${sessionId}.`);
       setMessages([
         {
           id: 1,
-          text: `Chào mừng bạn! Một phiên làm việc mới đã được tạo với ID: ${newSessionId.substring(
-            0,
-            18
-          )} ... Gõ @ để xem lệnh.`,
+          text: `🎯 Phiên làm việc: ${sessionId.substring(0, 18)}... Gõ @ để xem lệnh.`,
           sender: "ai",
         },
       ]);
     }
-  }, []); // Mảng dependency rỗng đảm bảo chỉ chạy 1 lần duy nhất
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, navigate]); // Chạy lại khi sessionId trên URL thay đổi
 
-  // --- STEP 3: THÊM useEffect ĐỂ TỰ ĐỘNG LƯU VÀO CACHE ---
   useEffect(() => {
-    // Hook này sẽ chạy mỗi khi `messages` hoặc `sessionId` thay đổi.
-    // Chúng ta chỉ lưu khi có ít nhất 1 tin nhắn và đã có session ID.
-    if (messages.length > 0 && sessionId) {
-      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
-      localStorage.setItem(SESSION_ID_KEY, sessionId);
-      console.log("Đã cập nhật lịch sử chat vào cache.");
+    // Chỉ lưu khi có sessionId và có tin nhắn
+    if (sessionId && messages.length > 0) {
+      const cacheKey = createChatCacheKey(sessionId);
+      localStorage.setItem(cacheKey, JSON.stringify(messages));
+      console.log(`Đã cập nhật lịch sử chat cho session ${sessionId} vào cache.`);
     }
-  }, [messages, sessionId]); // Dependencies
+  }, [messages, sessionId]); // Theo dõi sự thay đổi của messages và sessionId
 
-  // useEffect để cuộn xuống cuối cùng không thay đổi
+  // useEffect để cuộn không thay đổi
   useEffect(() => {
     if (messageListRef.current) {
       messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
 
+  // --- CÁC HÀM HANDLER ---
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && !isLoading) {
       handleSendMessage();
@@ -135,7 +135,7 @@ export const ChatPage: React.FC = () => {
     setInputText("");
     setIsLoading(true);
 
-    // Gửi ảnh
+    // Gửi ảnh hoặc text phân tích sơ đồ
     if (tag === "@diagram") {
       try {
         if (imageBase64 && !imageBase64.startsWith("data:image/")) {
@@ -169,10 +169,10 @@ export const ChatPage: React.FC = () => {
 
         if (imageBase64) {
           sessionStorage.setItem("diagramImage", imageBase64);
-          window.open(`/diagram?type=image`, "_blank");
+          window.open(`/diagram/${sessionId}?type=image`, "_blank");
         } else {
           const inputData = encodeURIComponent(payload);
-          window.open(`/diagram?type=text&q=${inputData}`, "_blank");
+          window.open(`/diagram/${sessionId}?type=text&q=${inputData}`, "_blank");
         }
       } catch {
         setMessages((prev) => [
@@ -203,6 +203,7 @@ export const ChatPage: React.FC = () => {
     }
   };
 
+  // --- PHẦN JSX RENDER (KHÔNG THAY ĐỔI) ---
   return (
     <div className="chat-page">
       <MessageList
