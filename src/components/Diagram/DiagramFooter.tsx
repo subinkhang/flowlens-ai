@@ -30,6 +30,11 @@ export const DiagramFooter: React.FC<{
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           className="question-input"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleAnalyzeClick();
+            }
+          }}
         />
         <button onClick={handleAnalyzeClick} className="analyze-button">
           Gửi phân tích

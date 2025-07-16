@@ -111,6 +111,12 @@ export interface SourceDocument {
   url: string;
   score: number;
   content_preview: string;
+  citationId: number;       // Số thứ tự để link, ví dụ: 1, 2, 3
+  documentId: string;       // ID thật của tài liệu để tạo link
+  title: string;            // Tên tài liệu
+  s3_uri: string;
+  score: number;
+  content_preview: string;  // Đoạn văn bản được trích dẫn
 }
 
 export interface AnalysisMetadata {
@@ -129,3 +135,67 @@ export interface AnalysisResponse {
 // --- UNIFIED RESPONSE TYPE ---
 
 export type ApiResponse = DiagramResponse | AnalysisResponse;
+
+export interface Document {
+  documentId: string;
+  documentName: string;
+  documentType: 'INTERNAL' | 'REFERENCE';
+  sourceUrl?: string;
+  s3Path?: string;
+  createdAt: string;
+  ownerId?: string;
+  content: string;
+  textContent?: string;
+}
+
+export interface StructuredAnalysis {
+  overview: {
+    process_name: string;
+    purpose: string;
+    process_type: string;
+    complexity_level: string;
+    scope: string;
+  };
+  components: {
+    start_event: string;
+    end_event: string;
+    actors: string[];
+    steps: string[];
+    sequence: string;
+  };
+  evaluation: {
+    logic_coherence: string;
+    completeness: string;
+    risks: string[];
+    controls: string[];
+    compliance: string;
+  };
+  improvement: {
+    bottlenecks: string[];
+    optimization_opportunities: string[];
+    automation_possibility: string;
+    kpis: string[];
+  };
+  summary: {
+    conclusion: string;
+    recommendations: string[];
+  };
+}
+
+// THÊM MỚI: Interface cho một nguồn trích dẫn mà API trả về
+export interface CitationSource {
+  citationId: number;       // Số thứ tự để link, ví dụ: 1, 2, 3
+  documentId: string;       // ID thật của tài liệu để tạo link
+  title: string;            // Tên tài liệu
+  s3_uri: string;
+  score: number;
+  content_preview: string;
+  full_retrieved_text: string;
+}
+
+// THÊM MỚI: Interface cho toàn bộ phản hồi từ API phân tích
+export interface FullAnalysisResponse {
+  success: boolean;
+  analysis: StructuredAnalysis; // Giữ nguyên cấu trúc analysis của bạn
+  sources: CitationSource[];    // Mảng các nguồn trích dẫn
+}

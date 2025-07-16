@@ -141,6 +141,7 @@ def retrieve_from_knowledge_base_with_sources(diagram_json: Dict, question: str,
             if score > 0.2:
                 print(f"--- Processing Result {i+1} (Score: {score}) ---")
                 # Thêm vào context để AI đọc
+                full_retrieved_text = result['content']['text']
                 context_parts.append(f"Nguồn [{i+1}]:\n{result['content']['text']}")
                 
                 # === THAY ĐỔI 3: LÀM GIÀU THÔNG TIN NGUỒN TRẢ VỀ ===
@@ -153,7 +154,8 @@ def retrieve_from_knowledge_base_with_sources(diagram_json: Dict, question: str,
                     'title': metadata.get('document_name', s3_location.get('uri', '').split('/')[-1]), # Ưu tiên lấy title từ metadata
                     's3_uri': s3_location.get('uri', ''),
                     'score': score,
-                    'content_preview': result['content']['text'][:150] + "..."
+                    'content_preview': full_retrieved_text[:150] + "..." if len(full_retrieved_text) > 150 else full_retrieved_text,
+                    'full_retrieved_text': full_retrieved_text
                 }
                 sources.append(source_info)
         
@@ -310,3 +312,4 @@ def create_error_response(status_code: int, error_message: str) -> Dict:
         'headers': {'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'},
         'body': json.dumps({'success': False, 'error': error_message}, ensure_ascii=False)
     }
+# Khang
