@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useDiagramAnalysis } from "../hooks/useDiagramAnalysis";
 import { useSession } from "../hooks/useSession"; 
 // Import các component con để hiển thị báo cáo
@@ -15,6 +15,7 @@ const AnalyzePage: React.FC = () => {
   const { analysisData, loading, error, runAnalysis } = useDiagramAnalysis();
   const { sessionId } = useSession(); // Lấy sessionId từ URL
   const [timestamp, setTimestamp] = useState("");
+  const hasRunAnalysis = useRef(false);
 
   // Logic set timestamp (giữ nguyên)
   useEffect(() => {
@@ -29,45 +30,41 @@ const AnalyzePage: React.FC = () => {
 
   // --- useEffect chính đã được MERGE ---
   useEffect(() => {
-    // Chỉ chạy logic phân tích sau khi đã lấy được sessionId từ URL
-    if (!sessionId) {
-      return; 
+    // 3. Thêm điều kiện kiểm tra "cờ"
+    // Chỉ chạy logic nếu đây là lần đầu tiên useEffect được gọi
+    if (hasRunAnalysis.current === false) {
+      const initializeAndRunAnalysis = () => {
+          const storedState = localStorage.getItem("analysisState");
+          if (!storedState) {
+              console.error("Không tìm thấy 'analysisState'...");
+              return;
+          }
+
+          try {
+              const parsedPayload = JSON.parse(storedState);
+              if (parsedPayload && parsedPayload.diagram) {
+                  const { nodes = [], edges = [], question = "Hãy phân tích sơ đồ này.", selectedDocumentIds = [] } = parsedPayload;
+                  
+                  // Lấy sessionId từ URL (giả sử bạn có hook useSession hoặc tương tự)
+                  const sessionId = window.location.pathname.split('/').pop() || "";
+                  
+                  runAnalysis(nodes, edges, selectedDocumentIds, question, sessionId);
+              } else {
+                  throw new Error("Dữ liệu trong localStorage có cấu trúc không hợp lệ.");
+              }
+          } catch (e) {
+              console.error("Lỗi khi parse dữ liệu từ localStorage:", e);
+          }
+      };
+      
+      initializeAndRunAnalysis();
+
+      // 4. Đánh dấu "cờ" là đã chạy
+      hasRunAnalysis.current = true;
     }
     
-    const initializeAndRunAnalysis = () => {
-        const storedState = localStorage.getItem("analysisState");
-
-        if (!storedState) {
-            console.error("Không tìm thấy 'analysisState' trong localStorage. Không thể chạy phân tích.");
-            // Có thể set lỗi ở đây nếu muốn, nhưng hook đã có xử lý lỗi chung
-            return;
-        }
-
-        try {
-            const parsedPayload = JSON.parse(storedState);
-
-            if (parsedPayload && parsedPayload.diagram) {
-                // Lấy các giá trị ra, cung cấp giá trị mặc định để tránh lỗi
-                const nodes = parsedPayload.diagram?.nodes || [];
-                const edges = parsedPayload.diagram?.edges || [];
-                const question = parsedPayload.question || "Hãy phân tích sơ đồ này.";
-                const selectedDocumentIds = parsedPayload.selectedDocumentIds || [];
-                
-                // --- LỜI GỌI QUAN TRỌNG NHẤT ---
-                // Gọi hàm `runAnalysis` đã được merge, truyền tất cả các tham số cần thiết
-                runAnalysis(nodes, edges, selectedDocumentIds, question, sessionId);
-
-            } else {
-                throw new Error("Dữ liệu trong localStorage có cấu trúc không hợp lệ.");
-            }
-        } catch (e) {
-            console.error("Lỗi khi parse dữ liệu từ localStorage:", e);
-        }
-    };
-    
-    initializeAndRunAnalysis();
-
-  }, [sessionId, runAnalysis]); // Chạy lại khi sessionId thay đổi (thường chỉ 1 lần)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Chạy lại khi sessionId thay đổi (thường chỉ 1 lần)
   
   if (loading)
     return (

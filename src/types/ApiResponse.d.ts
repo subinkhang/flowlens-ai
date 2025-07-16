@@ -116,7 +116,8 @@ export interface SourceDocument {
   title: string;            // Tên tài liệu
   s3_uri: string;
   score: number;
-  content_preview: string;  // Đoạn văn bản được trích dẫn
+  content_preview: string;
+  full_retrieved_text: string;
 }
 
 export interface AnalysisMetadata {

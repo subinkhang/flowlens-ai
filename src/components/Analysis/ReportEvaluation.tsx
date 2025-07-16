@@ -1,11 +1,11 @@
 import React from "react";
 import ReportCard from "./ReportCard";
-import type { CitationSource, Evaluation } from "../../types/ApiResponse";
+import type { SourceDocument, Evaluation } from "../../types/ApiResponse";
 import { TextWithCitations } from "./TextWithCitations";
 
 interface ReportEvaluationProps {
   evaluation: Evaluation;
-  sources: CitationSource[];
+  sources: SourceDocument[];
 }
 
 const ReportEvaluation: React.FC<ReportEvaluationProps> = ({ evaluation, sources }) => {

@@ -1,7 +1,7 @@
 // src/components/DocumentItem.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import type { Document } from '../types/document';
+import type { Document } from '../types/ApiResponse';
 
 interface Props {
   document: Document;

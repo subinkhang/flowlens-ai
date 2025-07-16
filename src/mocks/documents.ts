@@ -1,5 +1,5 @@
 // src/mocks/documents.ts
-import type { Document } from "../types/document";
+import type { Document } from "../types/ApiResponse";
 
 export const mockDocuments: Document[] = [
   {

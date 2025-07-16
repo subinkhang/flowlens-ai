@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import type { CitationSource } from '../../types/ApiResponse';
+import type { SourceDocument } from '../../types/ApiResponse';
 
 interface Props {
   text: string | undefined | null;
-  sources: CitationSource[];
+  sources: SourceDocument[];
 }
 
 export const TextWithCitations: React.FC<Props> = ({ text, sources }) => {

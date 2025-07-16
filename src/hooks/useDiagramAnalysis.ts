@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { analyzeDiagram } from "../api/analyzeApi";
 import type {
   DiagramNode,
@@ -32,14 +32,13 @@ export const useDiagramAnalysis = () => {
   const [error, setError] = useState<string | null>(null);
 
   // --- HÀM runAnalysis ĐÃ ĐƯỢC MERGE ---
-  const runAnalysis = async (
+  const runAnalysis = useCallback(async (
     nodes: DiagramNode[],
     edges: DiagramEdge[],
-    selectedDocumentIds: string[],
+    selectedDocumentIds: string[], 
     question: string,
     sessionId: string
-  ): Promise<AnalysisResponse> => {
-    
+  ) => {
     setLoading(true);
     setError(null);
     setAnalysisData(null);
@@ -50,8 +49,7 @@ export const useDiagramAnalysis = () => {
       selectedDocumentIds,
       ...(question?.trim() && { question }),
     };
-
-    // Tạo khóa cache từ payload
+    
     const cacheKey = createAnalysisCacheKey(payload);
     console.log("Sử dụng cache key cho phân tích:", cacheKey);
 
@@ -61,7 +59,7 @@ export const useDiagramAnalysis = () => {
       const parsedData: AnalysisResponse = JSON.parse(cachedResult);
       setAnalysisData(parsedData);
       setLoading(false);
-      return parsedData; // Trả về dữ liệu từ cache
+      return;
     }
 
     console.log("Không có cache. Bắt đầu gọi API phân tích...");
@@ -73,25 +71,20 @@ export const useDiagramAnalysis = () => {
         localStorage.setItem(cacheKey, JSON.stringify(response));
         console.log("Đã lưu kết quả phân tích vào cache.");
       }
-
       setAnalysisData(response);
-      return response; // Trả về dữ liệu từ API
-
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
         const message = err.response?.data?.message || err.message || "Lỗi mạng hoặc máy chủ.";
         setError(message);
-        throw new Error(message); // Vẫn throw Error để component cha có thể bắt
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Lỗi không xác định khi phân tích.");
       }
-
-      const errorMessage = (err instanceof Error) ? err.message : "Lỗi không xác định khi phân tích.";
-      setError(errorMessage);
-      throw new Error(errorMessage);
-
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // 3. Cung cấp một mảng dependency rỗng
 
   return {
     analysisData,

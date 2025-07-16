@@ -1,6 +1,4 @@
 import { useState } from "react";
-// 1. Import useNavigate
-import { useNavigate } from "react-router-dom";
 
 export const DiagramFooter: React.FC<{
   onExport: () => void;
@@ -8,8 +6,6 @@ export const DiagramFooter: React.FC<{
   onNavigateToDocuments: () => void;
 }> = ({ onExport, onAnalyze, onNavigateToDocuments }) => {
   const [question, setQuestion] = useState("");
-  // 2. Khởi tạo navigate
-  const navigate = useNavigate();
 
   const handleAnalyzeClick = () => {
     onAnalyze(question.trim());
