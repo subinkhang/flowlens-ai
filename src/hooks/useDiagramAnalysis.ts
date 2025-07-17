@@ -17,7 +17,7 @@ const createAnalysisCacheKey = (payload: object): string => {
       hash = (hash << 5) - hash + char;
       hash |= 0;
     }
-    const sessionId = payload.sessionId || 'no-session';
+    const sessionId = (payload as { sessionId: string }).sessionId || 'no-session';
     return `analysis_cache_${sessionId}_${hash}`;
   } catch {
     return `analysis_cache_default_key`;

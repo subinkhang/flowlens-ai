@@ -1,11 +1,11 @@
 import React from "react";
 import ReportCard from "./ReportCard";
-import type { SourceDocument, Summary } from "../../types/ApiResponse";
+import type { Summary } from "../../types/ApiResponse";
 import { TextWithCitations } from "./TextWithCitations";
 
 interface ReportSummaryProps {
   summary: Summary;
-  sources: SourceDocument[];
+  sources: any[];
 }
 
 const ReportSummary: React.FC<ReportSummaryProps> = ({ summary, sources }) => {

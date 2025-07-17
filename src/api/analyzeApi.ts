@@ -1,5 +1,5 @@
 import axios from "../utils/axiosConfig";
-import type { AnalysisResponse, SubmitResponse, StatusResponse } from "../types/ApiResponse";
+import type { SubmitResponse, StatusResponse } from "../types/ApiResponse";
 import { AxiosError } from "axios";
 import type { DiagramNode, DiagramEdge } from "../types/ApiResponse";
 import { API_ENDPOINTS } from "./endpoints";

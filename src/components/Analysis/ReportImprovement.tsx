@@ -1,11 +1,11 @@
 import React from "react";
 import ReportCard from "./ReportCard";
-import type { SourceDocument, Improvement } from "../../types/ApiResponse";
+import type { Improvement } from "../../types/ApiResponse";
 import { TextWithCitations } from "./TextWithCitations";
 
 interface ReportImprovementProps {
   improvement: Improvement;
-  sources: SourceDocument[];
+  sources: any[];
 }
 
 const ReportImprovement: React.FC<ReportImprovementProps> = ({

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useDiagramAnalysis } from "../hooks/useDiagramAnalysis";
-import { useSession } from "../hooks/useSession"; 
+// import { useSession } from "../hooks/useSession"; 
 // Import các component con để hiển thị báo cáo
 import ReportOverview from "../components/Analysis/ReportOverview";
 import ReportComponents from "../components/Analysis/ReportComponents";
@@ -13,7 +13,7 @@ import ReportSources from "../components/Analysis/ReportSources";
 const AnalyzePage: React.FC = () => {
   // Lấy các hàm và state từ cả hai hook
   const { analysisData, isLoading, error, runAnalysis, statusMessage } = useDiagramAnalysis();
-  const { sessionId } = useSession(); // Lấy sessionId từ URL
+  // const { sessionId } = useSession(); // Lấy sessionId từ URL
   const [timestamp, setTimestamp] = useState("");
   const hasRunAnalysis = useRef(false);
 
@@ -65,7 +65,7 @@ const AnalyzePage: React.FC = () => {
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4l-3 3 3 3H4z"></path>
         </svg>
         <h2 className="text-xl font-semibold">{statusMessage || "Đang khởi tạo..."}</h2>
-        <p className="text-sm text-gray-500 mt-2">Quá trình này có thể mất vài giây.</p>
+        <p className="text-sm text-gray-500 mt-2">Quá trình này có thể mất vài giây, vui lòng không rời khỏi trang.</p>
       </div>
     );
   }
@@ -87,8 +87,8 @@ const AnalyzePage: React.FC = () => {
         <svg className="w-12 h-12 mb-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-4-14v14" />
         </svg>
-        <h2 className="text-xl font-semibold">Không có dữ liệu phân tích</h2>
-        <p className="text-sm text-gray-500 mt-2">Vui lòng nhập sơ đồ và câu hỏi trước đó.</p>
+        <h2 className="text-xl font-semibold">FlowLens đang phân tích dữ liệu...</h2>
+        {/* <p className="text-sm text-gray-500 mt-2">Vui lòng nhập sơ đồ và câu hỏi trước đó.</p> */}
       </div>
     );
   }

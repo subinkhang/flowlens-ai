@@ -12,7 +12,7 @@ export interface Rule {
 
 interface ConditionPanelProps {
   selectedEdge: Edge;
-  onSave: (edgeId: string, logic: 'Và' | 'Hoặc', rules: Rule[]) => void;
+  onSave: (edgeId: string, logic: 'AND' | 'OR', rules: Rule[]) => void;
   onClose: () => void;
 }
 

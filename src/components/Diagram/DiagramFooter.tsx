@@ -4,7 +4,7 @@ export const DiagramFooter: React.FC<{
   onExport: () => void;
   onAnalyze: (question: string) => void;
   onNavigateToDocuments: () => void;
-}> = ({ onExport, onAnalyze, onNavigateToDocuments }) => {
+}> = ({ onAnalyze, onNavigateToDocuments }) => {
   const [question, setQuestion] = useState("");
 
   const handleAnalyzeClick = () => {
@@ -37,9 +37,9 @@ export const DiagramFooter: React.FC<{
         Chọn Nguồn Tri Thức
       </button>
 
-      <button onClick={onExport} className="confirm-button">
+      {/* <button onClick={onExport} className="confirm-button">
         Xuất Sơ đồ (JSON)
-      </button>
+      </button> */}
     </div>
   );
 };
