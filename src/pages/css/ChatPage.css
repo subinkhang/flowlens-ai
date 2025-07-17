@@ -231,3 +231,69 @@ button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
 }
+
+.chat-sidebar {
+  position: fixed; 
+  top: 0;
+  right: 0;
+  
+  width: 300px;
+  height: 100vh;
+
+  /* Giao diện */
+  background-color: #f8f9fa;
+  border-left: 1px solid #e9ecef;
+  padding: 1.5rem; /* 24px */
+  
+  z-index: 10; 
+  
+  transition: transform 0.3s ease-in-out;
+  
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #212529;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 0.75rem;
+}
+
+.sidebar-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sidebar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 15px;
+  background-color: #ffffff;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  text-align: center;
+  text-decoration: none;
+  color: #495057;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-button:hover {
+  border-color: #80bdff;
+  color: #004085;
+  background-color: #e7f3ff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.chat-page {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

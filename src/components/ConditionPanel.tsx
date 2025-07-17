@@ -12,15 +12,15 @@ export interface Rule {
 
 interface ConditionPanelProps {
   selectedEdge: Edge;
-  onSave: (edgeId: string, logic: 'AND' | 'OR', rules: Rule[]) => void;
+  onSave: (edgeId: string, logic: 'Và' | 'Hoặc', rules: Rule[]) => void;
   onClose: () => void;
 }
 
 // Danh sách các toán tử để người dùng chọn
 const OPERATORS = [
-  'Contains', 'Does not contain', 'Exactly matches', 'Is in', 'Is not in',
-  'Greater than', 'Less than', 'After', 'Before', 'Is true', 'Is false',
-  'Exists', 'Does not exist'
+  'Chứa', 'Không chứa', 'Bằng', 'Nằm trong', 'Không nằm trong',
+  'Lớn hơn', 'Nhỏ hơn', 'Sau', 'Trước', 'Là đúng', 'Là sai',
+  'Tồn tại', 'Không tồn tại'
 ];
 
 export const ConditionPanel: React.FC<ConditionPanelProps> = ({ selectedEdge, onSave, onClose }) => {

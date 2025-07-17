@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 // Import các hook từ react-router-dom
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import "./css/ChatPage.css";
 import { generateSessionId } from "../utils/sessionId";
 import { generateDiagram } from "../api/diagramApi";
@@ -19,7 +19,6 @@ export const TAG_SUGGESTIONS = ["@diagram", "@ask", "@improve"];
 
 // Hàm helper để tạo khóa cache động dựa trên sessionId
 const createChatCacheKey = (sessionId: string) => `flowlens_chat_history_${sessionId}`;
-
 
 export const ChatPage: React.FC = () => {
   const { sessionId } = useParams<{ sessionId?: string }>();
@@ -228,6 +227,21 @@ export const ChatPage: React.FC = () => {
           setImageBase64={setImageBase64}
         />
       </div>
+
+      <aside className="chat-sidebar">
+        <h3 className="sidebar-title">Công cụ</h3>
+        <div className="sidebar-buttons">
+          <Link to={`/diagram/${sessionId}`} className="sidebar-button">
+            Xem Sơ đồ
+          </Link>
+          <Link to={`/analyze/${sessionId}`} className="sidebar-button">
+            Xem Báo cáo
+          </Link>
+          <Link to={`/documents`} className="sidebar-button">
+            Xem Tài liệu
+          </Link>
+        </div>
+      </aside>
     </div>
   );
 };

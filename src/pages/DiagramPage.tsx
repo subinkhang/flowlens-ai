@@ -167,7 +167,7 @@ export const DiagramPage: React.FC = () => {
     const goldenFlowData = getCleanedDiagramData();
     console.log("--- GOLDEN JSON ---");
     console.log(JSON.stringify(goldenFlowData, null, 2));
-    alert("Đã xuất 'Golden JSON' sạch sẽ ra Console!");
+    alert("Đã xuất JSON ra Console!");
   }, [getCleanedDiagramData]);
 
   // 5. Cập nhật hàm onAnalyze để bao gồm cả `selectedDocumentIds`
