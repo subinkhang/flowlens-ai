@@ -1,34 +1,26 @@
 import axios from "../utils/axiosConfig";
-import type { AnalysisResponse } from "../types/ApiResponse";
+import type { SubmitResponse, StatusResponse } from "../types/ApiResponse";
 import { AxiosError } from "axios";
 import type { DiagramNode, DiagramEdge } from "../types/ApiResponse";
+import { API_ENDPOINTS } from "./endpoints";
 
-const ANALYZE_API = import.meta.env.VITE_API_ANALYZE_URL;
-
-export interface AnalyzeDiagramPayload {
+export interface SubmitJobPayload {
+  sessionId: string;
   diagram: {
     nodes: DiagramNode[];
     edges: DiagramEdge[];
   };
   question?: string;
+  selectedDocumentIds: string[];
 }
 
-export const analyzeDiagram = async (
-  payload: AnalyzeDiagramPayload
-): Promise<AnalysisResponse> => {
-  console.log('--- [API LAYER] --- Gửi payload đến backend:', payload);
+export const submitAnalysisJob = async (
+  payload: SubmitJobPayload
+): Promise<SubmitResponse> => {
+  console.log('--- [API LAYER] --- Gửi yêu cầu SUBMIT JOB đến backend:', payload);
   try {
-    console.log("📤 Sending analysis request to:", ANALYZE_API);
-    console.log("📦 Request body:", payload);
-
-    const response = await axios.post<AnalysisResponse>(ANALYZE_API, payload);
-
-    console.log("✅ Analysis response:", response.data);
-
-    if (!response.data.success) {
-      throw new Error("API response unsuccessful");
-    }
-
+    const response = await axios.post<SubmitResponse>(API_ENDPOINTS.analyzeProcess, payload);
+    console.log("✅ Submit job response:", response.data);
     return response.data;
   } catch (error: unknown) {
     if (error instanceof AxiosError) {
@@ -43,5 +35,28 @@ export const analyzeDiagram = async (
     }
     console.error("❌ Unexpected error:", error);
     throw { message: "Unknown error", code: "UNKNOWN" };
+  }
+};
+
+export const getAnalysisStatus = async (
+  jobId: string
+): Promise<StatusResponse> => {
+  try {
+    const endpoint = API_ENDPOINTS.getAnalysisStatus(jobId);
+    const response = await axios.get<StatusResponse>(endpoint);
+    return response.data;
+  } catch (error: unknown) {
+    if (error instanceof AxiosError) {
+      const statusCode = error.response?.status;
+      if (statusCode === 404) {
+        throw { message: "Job không tồn tại" };
+      } else if (statusCode === 500) {
+        throw { message: "Lỗi server" };
+      } else {
+        throw (error.response?.data ?? { message: "Unknown status check error" });
+      }
+    } else {
+      throw { message: "Unknown status check error" };
+    }
   }
 };

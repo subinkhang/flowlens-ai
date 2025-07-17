@@ -200,7 +200,7 @@ export const DiagramPage: React.FC = () => {
   if (!initialData) {
     return (
       <div className="loading-container">
-        <h2>Đang tạo sơ đồ từ AI...</h2>
+        <h2>FlowLens đang tạo sơ đồ từ...</h2>
         <p>Vui lòng chờ trong giây lát.</p>
       </div>
     );

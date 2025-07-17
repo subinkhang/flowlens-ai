@@ -4,4 +4,4 @@ export interface Message {
   sender: "user" | "ai";
 }
 
-export const TAG_SUGGESTIONS = ["@diagram", "@ask", "@improve"];
+export const TAG_SUGGESTIONS = ["@diagram"];
