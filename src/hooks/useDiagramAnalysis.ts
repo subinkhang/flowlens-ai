@@ -3,10 +3,8 @@ import { submitAnalysisJob, getAnalysisStatus } from "../api/analyzeApi";
 import type {
   DiagramNode,
   DiagramEdge,
-  AnalysisResponse,
   FullAnalysisResponse
 } from "../types/ApiResponse";
-import { AxiosError } from "axios";
 
 const POLLING_INTERVAL = 30000;
 
@@ -19,8 +17,6 @@ const createAnalysisCacheKey = (payload: object): string => {
       hash = (hash << 5) - hash + char;
       hash |= 0;
     }
-    // THÊM sessionId vào key (nếu có) để cache là duy nhất cho mỗi phiên
-    // @ts-ignore
     const sessionId = payload.sessionId || 'no-session';
     return `analysis_cache_${sessionId}_${hash}`;
   } catch {
@@ -29,16 +25,14 @@ const createAnalysisCacheKey = (payload: object): string => {
 };
 
 export const useDiagramAnalysis = () => {
-  // --- 1. STATE MỚI ---
   const [analysisData, setAnalysisData] = useState<FullAnalysisResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // Sẽ quản lý cả submit và polling
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string>(''); // Thêm state để hiển thị thông báo cho người dùng
+  const [statusMessage, setStatusMessage] = useState<string>('');
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- 2. HÀM CHẠY PHÂN TÍCH ĐƯỢC CẬP NHẬT ---
   const runAnalysis = useCallback(async (
     nodes: DiagramNode[],
     edges: DiagramEdge[],
@@ -53,8 +47,13 @@ export const useDiagramAnalysis = () => {
     setStatusMessage('Bắt đầu phiên phân tích...');
 
     const payload = { sessionId, diagram: { nodes, edges }, selectedDocumentIds, ...(question?.trim() && { question }) };
+
+    console.log("--- [HOOK DEBUG] PAYLOAD ĐƯỢC TẠO ĐỂ GỬI ĐI ---");
+    console.log(JSON.stringify(payload, null, 2));
+    if (nodes.length === 0) {
+      console.warn("CẢNH BÁO: 'nodes' đang bị rỗng khi gọi runAnalysis!");
+    }
     
-    // Cache vẫn có thể hữu ích cho kết quả cuối cùng, nhưng không dùng cho việc submit nữa
     const cacheKey = createAnalysisCacheKey(payload);
     const cachedResult = localStorage.getItem(cacheKey);
     if (cachedResult) {

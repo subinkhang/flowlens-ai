@@ -28,29 +28,26 @@ const AnalyzePage: React.FC = () => {
     );
   }, []);
 
-  // --- useEffect chính đã được MERGE ---
   useEffect(() => {
-    // Chỉ chạy logic nếu đây là lần đầu tiên component được render
     if (hasRunAnalysis.current === false) {
       const storedState = localStorage.getItem("analysisState");
       if (!storedState) {
         console.error("Không tìm thấy 'analysisState' để bắt đầu phân tích.");
-        // Bạn có thể muốn set một lỗi cụ thể ở đây nếu cần
         return;
       }
       
       const parsedPayload = JSON.parse(storedState);
       
-      // Kích hoạt quá trình phân tích từ hook
+      const diagramData = parsedPayload.diagram || { nodes: [], edges: [] };
+      
       runAnalysis(
-        parsedPayload.nodes || [],
-        parsedPayload.edges || [],
+        diagramData.nodes || [],
+        diagramData.edges || [],
         parsedPayload.selectedDocumentIds || [],
         parsedPayload.question || "Hãy phân tích sơ đồ này.",
         parsedPayload.sessionId || ""
       );
 
-      // Đánh dấu là đã chạy để tránh gọi lại khi re-render
       hasRunAnalysis.current = true;
     }
   }, [runAnalysis]);
@@ -67,29 +64,32 @@ const AnalyzePage: React.FC = () => {
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4l-3 3 3 3H4z"></path>
         </svg>
-        {/* Hiển thị thông báo trạng thái động từ hook */}
         <h2 className="text-xl font-semibold">{statusMessage || "Đang khởi tạo..."}</h2>
         <p className="text-sm text-gray-500 mt-2">Quá trình này có thể mất vài giây.</p>
       </div>
     );
   }
 
-  if (error) {
+  if (error)
     return (
-        <div className="flex flex-col items-center justify-center h-screen bg-red-50 text-red-600">
-            {/* ... JSX cho lỗi ... */}
-            <h2 className="text-xl font-semibold">Đã xảy ra lỗi</h2>
-            <p className="text-sm text-gray-500 mt-2">{error}</p>
-        </div>
+      <div className="flex flex-col items-center justify-center h-screen bg-red-50 text-red-600">
+        <svg className="w-12 h-12 mb-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h2 className="text-xl font-semibold">Đã xảy ra lỗi</h2>
+        <p className="text-sm text-gray-500 mt-2">{error}</p>
+      </div>
     );
-  }
 
   if (!analysisData || !analysisData.analysis) {
-    // Trạng thái này sẽ ít xảy ra hơn, vì `isLoading` sẽ true cho đến khi có kết quả hoặc lỗi
     return (
-        <div className="flex flex-col items-center justify-center h-screen text-gray-600">
-            {/* ... JSX khi không có dữ liệu ... */}
-        </div>
+      <div className="flex flex-col items-center justify-center h-screen text-gray-600">
+        <svg className="w-12 h-12 mb-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-4-14v14" />
+        </svg>
+        <h2 className="text-xl font-semibold">Không có dữ liệu phân tích</h2>
+        <p className="text-sm text-gray-500 mt-2">Vui lòng nhập sơ đồ và câu hỏi trước đó.</p>
+      </div>
     );
   }
 
