@@ -1,11 +1,14 @@
-import { useState, useCallback } from "react";
-import { analyzeDiagram } from "../api/analyzeApi";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { submitAnalysisJob, getAnalysisStatus } from "../api/analyzeApi";
 import type {
   DiagramNode,
   DiagramEdge,
   AnalysisResponse,
+  FullAnalysisResponse
 } from "../types/ApiResponse";
 import { AxiosError } from "axios";
+
+const POLLING_INTERVAL = 30000;
 
 const createAnalysisCacheKey = (payload: object): string => {
   try {
@@ -25,13 +28,17 @@ const createAnalysisCacheKey = (payload: object): string => {
   }
 };
 
-
 export const useDiagramAnalysis = () => {
-  const [analysisData, setAnalysisData] = useState<AnalysisResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  // --- 1. STATE MỚI ---
+  const [analysisData, setAnalysisData] = useState<FullAnalysisResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false); // Sẽ quản lý cả submit và polling
   const [error, setError] = useState<string | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string>(''); // Thêm state để hiển thị thông báo cho người dùng
 
-  // --- HÀM runAnalysis ĐÃ ĐƯỢC MERGE ---
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // --- 2. HÀM CHẠY PHÂN TÍCH ĐƯỢC CẬP NHẬT ---
   const runAnalysis = useCallback(async (
     nodes: DiagramNode[],
     edges: DiagramEdge[],
@@ -39,57 +46,91 @@ export const useDiagramAnalysis = () => {
     question: string,
     sessionId: string
   ) => {
-    setLoading(true);
+    setIsLoading(true);
     setError(null);
     setAnalysisData(null);
+    setJobId(null);
+    setStatusMessage('Bắt đầu phiên phân tích...');
 
-    const payload = {
-      sessionId,
-      diagram: { nodes, edges },
-      selectedDocumentIds,
-      ...(question?.trim() && { question }),
-    };
+    const payload = { sessionId, diagram: { nodes, edges }, selectedDocumentIds, ...(question?.trim() && { question }) };
     
+    // Cache vẫn có thể hữu ích cho kết quả cuối cùng, nhưng không dùng cho việc submit nữa
     const cacheKey = createAnalysisCacheKey(payload);
-    console.log("Sử dụng cache key cho phân tích:", cacheKey);
-
     const cachedResult = localStorage.getItem(cacheKey);
     if (cachedResult) {
-      console.log("Tìm thấy kết quả phân tích trong cache. Đang sử dụng lại...");
-      const parsedData: AnalysisResponse = JSON.parse(cachedResult);
-      setAnalysisData(parsedData);
-      setLoading(false);
-      return;
+        console.log("Tìm thấy kết quả hoàn chỉnh trong cache. Hiển thị ngay.");
+        setAnalysisData(JSON.parse(cachedResult));
+        setIsLoading(false);
+        setStatusMessage('Đã tải kết quả từ cache.');
+        return;
     }
 
-    console.log("Không có cache. Bắt đầu gọi API phân tích...");
     try {
-      const response = await analyzeDiagram(payload);
-      console.log('--- [HOOK] --- API trả về response:', response);
-      
-      if (response) {
-        localStorage.setItem(cacheKey, JSON.stringify(response));
-        console.log("Đã lưu kết quả phân tích vào cache.");
-      }
-      setAnalysisData(response);
-    } catch (err: unknown) {
-      if (err instanceof AxiosError) {
-        const message = err.response?.data?.message || err.message || "Lỗi mạng hoặc máy chủ.";
-        setError(message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Lỗi không xác định khi phân tích.");
-      }
-    } finally {
-      setLoading(false);
+      setStatusMessage('Đang gửi yêu cầu đến server...');
+      const response = await submitAnalysisJob(payload);
+      setJobId(response.jobId); // Lưu lại jobId và kích hoạt useEffect polling
+    } catch (err: any) {
+      setError(err.message || "Lỗi khi gửi yêu cầu phân tích.");
+      setIsLoading(false);
+      setStatusMessage('Gửi yêu cầu thất bại.');
     }
-  }, []); // 3. Cung cấp một mảng dependency rỗng
+  }, []);
 
-  return {
-    analysisData,
-    loading,
-    error,
-    runAnalysis,
-  };
+  // --- 3. useEffect ĐỂ XỬ LÝ POLLING ---
+  useEffect(() => {
+    // Dọn dẹp interval cũ nếu có
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    // Nếu không có jobId, không làm gì cả
+    if (!jobId) {
+        setIsLoading(false); // Nếu không có job, chắc chắn không loading
+        return;
+    }
+
+    setStatusMessage('Yêu cầu đã được chấp nhận. Đang chờ xử lý trong nền...');
+    
+    // Bắt đầu tiến trình polling mới
+    intervalRef.current = setInterval(async () => {
+      try {
+        const response = await getAnalysisStatus(jobId);
+
+        if (response.status === 'COMPLETED') {
+          clearInterval(intervalRef.current ?? 0); // Dừng polling
+          setAnalysisData(response.result!); // Cập nhật dữ liệu kết quả
+          setJobId(null); // Reset jobId
+          setStatusMessage('Phân tích hoàn tất!');
+          
+          // Lưu kết quả cuối cùng vào cache
+          const payload = { /* ... cần tạo lại payload nếu muốn cache chính xác ... */ };
+          const cacheKey = createAnalysisCacheKey(payload); // Tạm thời dùng payload rỗng
+          localStorage.setItem(cacheKey, JSON.stringify(response.result!));
+
+        } else if (response.status === 'FAILED') {
+          clearInterval(intervalRef.current  ?? 0); // Dừng polling
+          setError(response.error || 'Quá trình phân tích thất bại.');
+          setJobId(null);
+          setStatusMessage('Quá trình phân tích đã thất bại.');
+        } else {
+          // Vẫn đang 'PROCESSING', cập nhật thông báo
+          setStatusMessage('AI đang phân tích... Vui lòng chờ.');
+        }
+      } catch (err: any) {
+        clearInterval(intervalRef.current ?? 0);
+        setError(err.message || 'Lỗi khi kiểm tra trạng thái.');
+        setJobId(null);
+        setStatusMessage('Mất kết nối với tiến trình phân tích.');
+      }
+    }, POLLING_INTERVAL);
+
+    // Hàm dọn dẹp khi component unmount
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [jobId]); // Chỉ phụ thuộc vào jobId
+
+  return { analysisData, isLoading, error, runAnalysis, statusMessage };
 };

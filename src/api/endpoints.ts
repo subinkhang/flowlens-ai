@@ -31,6 +31,12 @@ export const API_ENDPOINTS = {
     // Endpoint cho Analyze
     analyzeProcess: createApiUrl(ANALYZE_PATH),
 
+    getAnalysisStatus: (jobId: string): string => {
+        // Giả sử bạn sẽ tạo một resource mới là 'analysis-status'
+        const STATUS_PATH = import.meta.env.VITE_API_STATUS_PATH || 'analysis-status';
+        return createApiUrl(`${STATUS_PATH}/${jobId}`);
+    },
+
     // == Endpoints cho Quản lý Tài liệu ==
 
     // GET /documents

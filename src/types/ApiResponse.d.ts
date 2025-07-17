@@ -200,3 +200,15 @@ export interface FullAnalysisResponse {
   analysis: StructuredAnalysis; // Giữ nguyên cấu trúc analysis của bạn
   sources: CitationSource[];    // Mảng các nguồn trích dẫn
 }
+
+export interface SubmitResponse {
+  jobId: string;
+  status: 'PROCESSING';
+}
+
+export interface StatusResponse {
+  jobId: string;
+  status: 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  result?: FullAnalysisResponse; // Kết quả cuối cùng sẽ có cấu trúc này
+  error?: string;
+}

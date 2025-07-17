@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../api/endpoints';
 import './css/AnalysisPage.css';
 import type { StructuredAnalysis, FullAnalysisResponse } from '../types/ApiResponse';
+import { useDiagramAnalysis } from '../hooks/useDiagramAnalysis';
 
 
 export const AnalysisPage: React.FC = () => {
