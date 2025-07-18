@@ -1,18 +1,22 @@
 import { Routes, Route } from 'react-router-dom';
-import { ChatPage } from './components/ChatPage';
-import { DiagramPage } from './components/DiagramPage';
+import { ChatPage } from './pages/ChatPage';
+import { DiagramPage } from './pages/DiagramPage';
+import { AnalysisPage } from './components/AnalysisPage';
+import DocumentsPage from './pages/DocumentsPage';
+import DocumentDetailPage from './pages/DocumentDetailPage';
 
 function App() {
   return (
     <Routes>
-      {/* Route cho trang chat (trang chủ) */}
       <Route path="/" element={<ChatPage />} />
 
-      {/* Route cho trang sơ đồ */}
       <Route path="/diagram" element={<DiagramPage />} />
 
-      {/* Bạn có thể thêm route cho trang 3 ở đây sau */}
-      {/* <Route path="/analysis" element={<AnalysisPage />} /> */}
+      <Route path="/analysis" element={<AnalysisPage />} />
+        
+      <Route path="/documents" element={<DocumentsPage />} />
+
+      <Route path="/documents/:documentId" element={<DocumentDetailPage />} />
     </Routes>
   );
 }

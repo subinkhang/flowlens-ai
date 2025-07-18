@@ -1,0 +1,49 @@
+{
+  "nodes": [
+    {
+      "id": "start",
+      "type": "input",
+      "data": { "label": "Bắt đầu: Nhận đơn xin vay" },
+      "position": { "x": 250, "y": 50 }
+    },
+    {
+      "id": "check_credit",
+      "type": "default",
+      "data": { "label": "Kiểm tra Lịch sử Tín dụng (Credit Score)" },
+      "position": { "x": 250, "y": 150 }
+    },
+    {
+      "id": "decision",
+      "type": "output",
+      "data": { "label": "Kết thúc: Đưa ra Quyết định" },
+      "position": { "x": 250, "y": 250 }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_start_check",
+      "source": "start",
+      "target": "check_credit",
+      "type": "custom",
+      "markerEnd": { "type": "arrowclosed" }
+    },
+    {
+      "id": "e_check_decision",
+      "source": "check_credit",
+      "target": "decision",
+      "type": "custom",
+      "markerEnd": { "type": "arrowclosed" },
+      "data": {
+        "logic": "AND",
+        "rules": [
+          {
+            "id": "rule_1",
+            "field": "Credit Score",
+            "operator": "Greater than",
+            "value": "650"
+          }
+        ]
+      }
+    }
+  ]
+}

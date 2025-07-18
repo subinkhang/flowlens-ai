@@ -1,0 +1,299 @@
+.chat-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f4f6f9;
+  font-family: "Segoe UI", sans-serif;
+  align-items: center;
+}
+
+.chat-page > * {
+  width: 100%;
+  max-width: 800px;
+}
+
+.message-list {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background: #ffffff;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  padding: 12px 16px;
+  margin: 8px 16px;
+  border-radius: 16px;
+  max-width: 60%; /* Giảm max-width để tin nhắn gọn hơn */
+  word-wrap: break-word;
+  line-height: 1.4;
+  font-size: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.user-message {
+  margin-left: auto; /* Đẩy tin nhắn của client sang bên phải */
+  background-color: #d1e7dd;
+  color: #0f5132;
+  border-top-right-radius: 4px; /* Bo góc nhẹ ở góc trên bên phải để giống chat */
+}
+
+.ai-message {
+  margin-right: auto; /* Đẩy tin nhắn của hệ thống sang bên trái */
+  background-color: #e2e3e5;
+  color: #41464b;
+  border-top-left-radius: 4px; /* Bo góc nhẹ ở góc trên bên trái để giống chat */
+}
+
+.loading-indicator {
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.input-area {
+  padding: 12px;
+  background: #f8f9fa;
+  border-top: 1px solid #ddd;
+}
+
+.message-input-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.message-input-container input[type="text"] {
+  flex: 1;
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+}
+
+.message-input-container input[type="file"] {
+  padding: 6px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.message-input-container button {
+  padding: 10px 16px;
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.message-input-container button:disabled {
+  background-color: #adb5bd;
+  cursor: not-allowed;
+}
+
+.message-input-container button:hover:not(:disabled) {
+  background-color: #0b5ed7;
+}
+
+.suggestions-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.suggestion-item {
+  background-color: #e9ecef;
+  padding: 6px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+  background-color: #ced4da;
+}
+
+.message-input-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  position: relative;
+}
+
+.file-upload-area {
+  width: 40px;
+  height: 40px;
+  border: 2px dashed #ccc;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.file-upload-area.dragging {
+  border-color: #007bff;
+  background-color: #e6f0ff;
+  transform: scale(1.1);
+}
+
+.file-upload-label {
+  font-size: 24px;
+  color: #333;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.image-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.file-upload-area:hover {
+  border-color: #007bff;
+}
+
+.drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 123, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #007bff;
+  pointer-events: none;
+}
+
+.error-message {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ff4d4f;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+#chat-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+#chat-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+button {
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.chat-sidebar {
+  position: fixed; 
+  top: 0;
+  right: 0;
+  
+  width: 320px;
+  height: 100vh;
+
+  /* Giao diện */
+  background-color: #f8f9fa;
+  border-left: 1px solid #e9ecef;
+  padding: 1.5rem; /* 24px */
+  
+  z-index: 10; 
+  
+  transition: transform 0.3s ease-in-out;
+  
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #212529;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #dee2e6;
+  padding-bottom: 0.75rem;
+}
+
+.sidebar-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sidebar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 15px;
+  background-color: #ffffff;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  text-align: center;
+  text-decoration: none;
+  color: #495057;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-button:hover {
+  border-color: #80bdff;
+  color: #004085;
+  background-color: #e7f3ff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.chat-page {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}

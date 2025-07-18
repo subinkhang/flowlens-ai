@@ -1,0 +1,54 @@
+/* Base styles for AnalyzePage */
+.analyze-page {
+  padding: 1rem;
+  background-color: #f3f4f6;
+  min-height: 100vh;
+}
+
+/* Heading styles */
+.analyze-page__title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 1.5rem;
+}
+
+/* Loading and error states */
+.analyze-page__loading,
+.analyze-page__error,
+.analyze-page__no-data {
+  text-align: center;
+  padding: 2rem;
+}
+
+.analyze-page__loading {
+  color: #4b5563;
+  font-size: 1.125rem;
+}
+
+.analyze-page__error {
+  color: #ef4444;
+  font-size: 1.125rem;
+}
+
+.analyze-page__no-data {
+  color: #4b5563;
+  font-size: 1.125rem;
+}
+
+/* Responsive adjustments */
+@media (min-width: 640px) {
+  .analyze-page {
+    padding: 2rem;
+  }
+
+  .analyze-page__title {
+    font-size: 2.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .analyze-page {
+    padding: 3rem;
+  }
+}
