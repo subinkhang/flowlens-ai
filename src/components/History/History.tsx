@@ -33,8 +33,7 @@ export const History: React.FC<HistoryProps> = ({ onSelect }) => {
   };
 
   return (
-    <div className="chat-layou">
-      {/* <div className="chat-sidebar-left"> */}
+    <div className="history-layout">
       <h3 className="sidebar-title">Lịch sử trò chuyện</h3>
       <button className="new-session-button" onClick={handleCreateNewSession}>
         + 
@@ -43,7 +42,7 @@ export const History: React.FC<HistoryProps> = ({ onSelect }) => {
         {sessions.map((session) => (
           <li
             key={session.id}
-            className="sidebar-button"
+            className="history-button"
             onClick={() => onSelect(session.id)}
             title={session.preview}
           >

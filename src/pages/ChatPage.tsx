@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-// Import các hook từ react-router-dom
 import { useNavigate, useParams, Link } from "react-router-dom";
 import "./css/ChatPage.css";
 import { generateSessionId } from "../utils/sessionId";
@@ -9,10 +8,9 @@ import { Suggestions } from "../components/Chat/Suggestions";
 import { ChatInput } from "../components/Chat/ChatInput";
 import { isVietnameseText } from "../utils/isVietnameseText";
 import { History } from "../components/History/History";
-import { askQuestionApi } from "../api/chatApi"; 
+import { askQuestionApi } from "../api/chatApi";
 import { getLatestDiagramForSession } from "../utils/diagramUtils";
 
-// --- ĐỊNH NGHĨA KIỂU DỮ LIỆU VÀ TAGS ---
 export interface Message {
   id: number;
   text: string;
@@ -20,7 +18,6 @@ export interface Message {
 }
 export const TAG_SUGGESTIONS = ["@diagram", "@ask", "@improve"];
 
-// Hàm helper để tạo khóa cache động dựa trên sessionId
 const createChatCacheKey = (sessionId: string) =>
   `flowlens_chat_history_${sessionId}`;
 
@@ -36,56 +33,46 @@ export const ChatPage: React.FC = () => {
   const messageListRef = useRef<HTMLDivElement>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
 
+  // === START: State mới cho responsive ===
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  // === END: State mới cho responsive ===
+
   useEffect(() => {
     if (!sessionId) {
       const newId = generateSessionId();
       navigate(`/chat/${newId}`, { replace: true });
-      return; // Dừng lại để chờ component re-render với sessionId mới
+      return;
     }
-
     const cacheKey = createChatCacheKey(sessionId);
     const cachedMessages = localStorage.getItem(cacheKey);
 
     if (cachedMessages) {
-      console.log(
-        `Đã tìm thấy lịch sử chat cho session ${sessionId}. Đang khôi phục...`
-      );
       setMessages(JSON.parse(cachedMessages));
     } else {
-      console.log(`Tạo phiên làm việc mới cho session ${sessionId}.`);
       setMessages([
         {
           id: 1,
-          text: `🎯 Phiên làm việc: ${sessionId.substring(
-            0,
-            18
-          )}... Gõ @ để xem lệnh.`,
+          text: `🎯 Phiên làm việc: ${sessionId.substring(0, 18)}... Gõ @ để xem lệnh.`,
           sender: "ai",
         },
       ]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, navigate]); // Chạy lại khi sessionId trên URL thay đổi
+  }, [sessionId, navigate]);
 
   useEffect(() => {
-    // Chỉ lưu khi có sessionId và có tin nhắn
     if (sessionId && messages.length > 0) {
       const cacheKey = createChatCacheKey(sessionId);
       localStorage.setItem(cacheKey, JSON.stringify(messages));
-      console.log(
-        `Đã cập nhật lịch sử chat cho session ${sessionId} vào cache.`
-      );
     }
-  }, [messages, sessionId]); // Theo dõi sự thay đổi của messages và sessionId
+  }, [messages, sessionId]);
 
-  // useEffect để cuộn không thay đổi
   useEffect(() => {
     if (messageListRef.current) {
       messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
 
-  // --- CÁC HÀM HANDLER ---
   const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && !isLoading) {
       handleSendMessage();
@@ -103,26 +90,19 @@ export const ChatPage: React.FC = () => {
     setShowSuggestions(false);
     document.getElementById("chat-input")?.focus();
   };
-
+  
   const handleSendMessage = async () => {
     const trimmedInput = inputText.trim();
 
-    // Không có ảnh + không có text
     if (!imageBase64 && trimmedInput === "") {
       setMessages((prev) => [
         ...prev,
-        {
-          id: Date.now(),
-          text: "⚠️ Bạn cần nhập nội dung hoặc tải ảnh lên.",
-          sender: "ai",
-        },
+        { id: Date.now(), text: "⚠️ Bạn cần nhập nội dung hoặc tải ảnh lên.", sender: "ai" },
       ]);
       return;
     }
-
     setShowSuggestions(false);
 
-    // Tách tag
     let tag = "no-tag";
     let payload = trimmedInput;
     if (trimmedInput.startsWith("@")) {
@@ -136,35 +116,20 @@ export const ChatPage: React.FC = () => {
       }
     }
 
-    const newUserMessage: Message = {
-      id: Date.now(),
-      text: trimmedInput || "[đã gửi ảnh]",
-      sender: "user",
-    };
+    const newUserMessage: Message = { id: Date.now(), text: trimmedInput || "[đã gửi ảnh]", sender: "user" };
     
     const chatHistoryForApi: { role: "user" | "assistant"; content: string }[] = messages
-      .filter(m => m.sender === 'user' || m.sender === 'ai') // Lọc các tin nhắn hệ thống
-      .map(m => ({
-        role: m.sender === 'ai' ? 'assistant' : 'user',
-        content: m.text,
-      }));
+      .filter(m => m.sender === 'user' || m.sender === 'ai')
+      .map(m => ({ role: m.sender === 'ai' ? 'assistant' : 'user', content: m.text }));
 
     setMessages((prev) => [...prev, newUserMessage]);
     setInputText("");
     setIsLoading(true);
 
-    // Gửi ảnh hoặc text phân tích sơ đồ
     if (tag === "@diagram") {
       try {
         if (imageBase64 && !imageBase64.startsWith("data:image/")) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              text: "❌ Ảnh không hợp lệ hoặc chưa tải xong.",
-              sender: "ai",
-            },
-          ]);
+          setMessages((prev) => [...prev, { id: Date.now(), text: "❌ Ảnh không hợp lệ hoặc chưa tải xong.", sender: "ai" }]);
           setIsLoading(false);
           return;
         }
@@ -176,104 +141,45 @@ export const ChatPage: React.FC = () => {
         });
         console.log("response ->", response);
 
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now() + 1,
-            text: "✅ Đã phân tích sơ đồ. Mở tab mới để xem!",
-            sender: "ai",
-          },
-        ]);
+        setMessages((prev) => [...prev, { id: Date.now() + 1, text: "✅ Đã phân tích sơ đồ. Mở tab mới để xem!", sender: "ai" }]);
 
         if (imageBase64) {
-          // Tạo một khóa động, duy nhất cho session này
           const diagramImageKey = `diagram_image_${sessionId}`;
-          // Lưu ảnh vào localStorage với khóa động
           localStorage.setItem(diagramImageKey, imageBase64);
-          // Mở tab mới, URL không đổi
           window.open(`/diagram/${sessionId}?type=image`, "_blank");
         } else {
           const inputData = encodeURIComponent(payload);
-          window.open(
-            `/diagram/${sessionId}?type=text&q=${inputData}`,
-            "_blank"
-          );
+          window.open(`/diagram/${sessionId}?type=text&q=${inputData}`, "_blank");
         }
       } catch {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now() + 2,
-            text: "❌ Gặp lỗi khi phân tích sơ đồ",
-            sender: "ai",
-          },
-        ]);
+        setMessages((prev) => [...prev, { id: Date.now() + 2, text: "❌ Gặp lỗi khi phân tích sơ đồ", sender: "ai" }]);
       } finally {
         setIsLoading(false);
         setImageBase64(null);
       }
     } else if (tag === "@ask") {
-      // Logic cho tag @ask
       try {
-        // Lấy sơ đồ gần nhất liên quan đến session này
         const diagramData = getLatestDiagramForSession(sessionId || '');
 
         if (!diagramData) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now() + 1,
-              text: "⚠️ Không tìm thấy sơ đồ nào liên quan đến phiên này để hỏi. Vui lòng tạo một sơ đồ trước bằng lệnh `@diagram`.",
-              sender: "ai",
-            },
-          ]);
+          setMessages((prev) => [...prev, { id: Date.now() + 1, text: "⚠️ Không tìm thấy sơ đồ nào liên quan đến phiên này để hỏi. Vui lòng tạo một sơ đồ trước bằng lệnh `@diagram`.", sender: "ai" }]);
           setIsLoading(false);
           return;
         }
 
-        const apiPayload = {
-          diagram: diagramData,
-          question: payload, // `payload` là nội dung câu hỏi sau tag @ask
-          chatHistory: chatHistoryForApi,
-          selectedDocumentIds: [], // Tạm thời để rỗng
-        };
-
-        // Gọi API
+        const apiPayload = { diagram: diagramData, question: payload, chatHistory: chatHistoryForApi, selectedDocumentIds: [] };
         const response = await askQuestionApi(apiPayload);
-
-        // Hiển thị câu trả lời của AI
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now() + 2,
-            text: response.answer,
-            sender: "ai",
-          },
-        ]);
+        setMessages((prev) => [...prev, { id: Date.now() + 2, text: response.answer, sender: "ai" }]);
 
       } catch (error) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now() + 3,
-            text: "❌ Rất tiếc, đã có lỗi xảy ra khi xử lý câu hỏi của bạn.",
-            sender: "ai",
-          },
-        ]);
+        setMessages((prev) => [...prev, { id: Date.now() + 3, text: "❌ Rất tiếc, đã có lỗi xảy ra khi xử lý câu hỏi của bạn.", sender: "ai" }]);
       } finally {
         setIsLoading(false);
-        setImageBase64(null); // Xóa ảnh nếu có
+        setImageBase64(null);
       }
     } else {
       setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: Date.now() + 3,
-            text: "📌 Đã ghi nhận yêu cầu.",
-            sender: "ai",
-          },
-        ]);
+        setMessages((prev) => [...prev, { id: Date.now() + 3, text: "📌 Đã ghi nhận yêu cầu.", sender: "ai" }]);
         setIsLoading(false);
         setImageBase64(null);
       }, 1000);
@@ -282,15 +188,27 @@ export const ChatPage: React.FC = () => {
 
   return (
     <div className="chat-layout">
-      <aside className="chat-sidebar-left">
+      {/* === THAY ĐỔI: Thêm class is-open dựa trên state === */}
+      <aside className={`chat-sidebar-left ${isLeftSidebarOpen ? "is-open" : ""}`}>
+        <button className="close-sidebar-btn" onClick={() => setIsLeftSidebarOpen(false)}>
+          Đóng Lịch sử
+        </button>
         <History
           onSelect={(selectedId) => {
             navigate(`/chat/${selectedId}`);
+            setIsLeftSidebarOpen(false); // Đóng sidebar sau khi chọn
           }}
         />
       </aside>
 
       <main className="chat-main">
+        {/* === THÊM MỚI: Header chỉ hiển thị trên mobile === */}
+        <div className="mobile-header">
+          <button onClick={() => setIsLeftSidebarOpen(true)}>Lịch sử</button>
+          <span>Flowlens AI</span>
+          <button onClick={() => setIsRightSidebarOpen(true)}>Công cụ</button>
+        </div>
+
         <MessageList
           messages={messages}
           isLoading={isLoading}
@@ -314,7 +232,11 @@ export const ChatPage: React.FC = () => {
         </div>
       </main>
 
-      <aside className="chat-sidebar-right">
+      {/* === THAY ĐỔI: Thêm class is-open dựa trên state === */}
+      <aside className={`chat-sidebar-right ${isRightSidebarOpen ? "is-open" : ""}`}>
+        <button className="close-sidebar-btn" onClick={() => setIsRightSidebarOpen(false)}>
+          Đóng Công cụ
+        </button>
         <h3 className="sidebar-title">Công cụ</h3>
         <div className="sidebar-buttons">
           <Link to={`/diagram/${sessionId}`} className="sidebar-button">

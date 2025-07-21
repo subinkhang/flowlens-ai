@@ -1,10 +1,11 @@
-/* src/components/DiagramPage.css */
-
+/* === CÁC STYLE HIỆN TẠI CỦA BẠN (GIỮ NGUYÊN) === */
 .diagram-page {
   width: 100vw;
   height: 100vh;
   display: flex;
   flex-direction: column;
+  /* Thêm overflow: hidden để tránh cuộn trang không mong muốn trên mobile */
+  overflow: hidden; 
 }
 
 .diagram-header {
@@ -12,6 +13,11 @@
   background-color: #f8f9fa;
   border-bottom: 1px solid #dee2e6;
   text-align: center;
+  /* Thêm flex để dễ căn chỉnh nút */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
 }
 
 .diagram-header h1 {
@@ -24,17 +30,20 @@
   color: #6c757d;
 }
 
-/* Quan trọng: ReactFlow cần một container có chiều cao xác định để render */
 .react-flow {
-  flex-grow: 1; /* Làm cho canvas của React Flow chiếm hết phần còn lại */
+  flex-grow: 1;
   background-color: #ffffff;
 }
 
 .diagram-footer {
   padding: 15px;
-  text-align: center;
   border-top: 1px solid #dee2e6;
   background-color: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .confirm-button {
@@ -54,7 +63,6 @@
 }
 
 .add-node-button {
-  margin-top: 10px;
   padding: 8px 16px;
   font-size: 14px;
   background-color: #007bff;
@@ -68,17 +76,16 @@
   background-color: #0056b3;
 }
 
-/* LOADING  */
-
 .loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  height: 100vh;
   padding: 20px;
   background: #f4f6f9;
   font-family: "Segoe UI", sans-serif;
+  text-align: center;
 }
 
 .loading-container h2 {
@@ -86,7 +93,6 @@
   font-weight: 600;
   color: #333;
   margin: 0 0 10px 0;
-  text-align: center;
   animation: fadeIn 0.5s ease-in-out;
 }
 
@@ -94,11 +100,9 @@
   font-size: 16px;
   color: #6c757d;
   margin: 0;
-  text-align: center;
   animation: fadeIn 0.7s ease-in-out;
 }
 
-/* Hiệu ứng loading với dấu chấm */
 .loading-container p::after {
   content: ".";
   animation: dots 1.5s infinite;
@@ -107,40 +111,15 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes dots {
-  0% {
-    content: ".";
-  }
-  33% {
-    content: "..";
-  }
-  66% {
-    content: "...";
-  }
-  100% {
-    content: ".";
-  }
-}
-
-.diagram-footer {
-  padding: 15px;
-  border-top: 1px solid #dee2e6;
-  background-color: #f8f9fa;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
+  0% { content: "."; }
+  33% { content: ".."; }
+  66% { content: "..."; }
+  100% { content: "."; }
 }
 
 .question-input {
@@ -175,11 +154,80 @@
   background-color: #0056b3;
 }
 
-.confirm-button {
-  background-color: #28a745;
-  color: white;
+.info-banner {
+  padding: 12px 15px;
+  background-color: #e7f3ff;
+  color: #004085;
+  text-align: center;
+  font-size: 14px;
+  border-bottom: 1px solid #b8daff;
 }
 
-.confirm-button:hover {
-  background-color: #218838;
+.condition-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 350px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  padding: 1rem;
+}
+
+/* === BẮT ĐẦU PHẦN RESPONSIVE CHO DI ĐỘNG === */
+@media (max-width: 768px) {
+  .diagram-header {
+    padding: 12px;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .diagram-header h1 {
+    font-size: 20px; /* Giảm kích thước font */
+  }
+
+  /* Ẩn MiniMap để tiết kiệm không gian */
+  .react-flow__minimap {
+    display: none;
+  }
+
+  /* Chuyển footer sang layout dọc */
+  .diagram-footer {
+    flex-direction: column;
+    align-items: stretch; /* Kéo dãn các item theo chiều rộng */
+    gap: 12px;
+    padding: 12px;
+  }
+
+  /* Cho phép input và các button chiếm toàn bộ chiều rộng */
+  .diagram-footer .question-input,
+  .diagram-footer .analyze-button,
+  .diagram-footer .confirm-button {
+    width: 100%;
+    max-width: none; /* Bỏ giới hạn chiều rộng */
+  }
+
+  /* Điều chỉnh panel điều kiện để hiển thị tốt hơn */
+  .condition-panel {
+    width: 95%; /* Chiếm gần hết chiều rộng */
+    max-width: 400px;
+    top: 50%;
+    left: 50%;
+    /* Dịch chuyển panel về giữa màn hình */
+    transform: translate(-50%, -50%);
+  }
+
+  .info-banner {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+  
+  .loading-container h2 {
+    font-size: 20px;
+  }
+  
+  .loading-container p {
+    font-size: 14px;
+  }
 }
