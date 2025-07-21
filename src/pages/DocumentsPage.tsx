@@ -22,7 +22,7 @@ const DocumentsPage: React.FC = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const fromSessionId = location.state?.fromSessionId;
+  const fromDiagramUrl = location.state?.fromDiagramUrl;
 
   const fetchDocuments = async () => {
     setIsLoading(true);
@@ -53,12 +53,20 @@ const DocumentsPage: React.FC = () => {
   };
 
   const handleConfirmSelection = () => {
-    if (!fromSessionId) {
-      console.error("Không có sessionId để quay lại. Điều hướng về trang chủ.");
+    // Kiểm tra xem URL để quay lại có tồn tại không
+    if (!fromDiagramUrl) {
+      console.error("Không có URL sơ đồ để quay lại. Điều hướng về trang chủ.");
+      alert("Lỗi: Không tìm thấy trang sơ đồ để quay lại.");
       navigate('/');
       return;
     }
-    navigate(`/diagram/${fromSessionId}`, { state: { selectedDocumentIds: Array.from(selectedIds) } });
+    
+    // Điều hướng về chính xác URL đã gửi qua, nhưng GỬI KÈM state mới (danh sách ID đã chọn)
+    navigate(fromDiagramUrl, { 
+      state: { 
+        selectedDocumentIds: Array.from(selectedIds) 
+      } 
+    });
   };
 
   return (

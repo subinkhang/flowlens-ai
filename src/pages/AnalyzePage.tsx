@@ -94,7 +94,6 @@ const AnalyzePage: React.FC = () => {
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2a2 2 0 012-2h2a2 2 0 012 2v2m-4-14v14" />
         </svg>
         <h2 className="text-xl font-semibold">FlowLens đang phân tích dữ liệu...</h2>
-        {/* <p className="text-sm text-gray-500 mt-2">Vui lòng nhập sơ đồ và câu hỏi trước đó.</p> */}
       </div>
     );
   }

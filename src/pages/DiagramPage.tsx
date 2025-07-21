@@ -79,10 +79,14 @@ export const DiagramPage: React.FC = () => {
   }, [initialData, setNodes, setEdges]);
 
   const handleNavigateToDocuments = () => {
-    // Khi đi đến trang documents, gửi kèm sessionId hiện tại
+    // location object đã có sẵn từ hook useLocation ở đầu file
+    const currentDiagramPath = location.pathname + location.search;
+
+    // THAY ĐỔI Ở ĐÂY: Gửi đi URL đầy đủ của trang Diagram hiện tại
     navigate('/documents', { 
       state: { 
-        fromSessionId: sessionId 
+        // Chúng ta sẽ gọi nó là fromDiagramUrl để rõ ràng hơn
+        fromDiagramUrl: currentDiagramPath 
       } 
     });
   };
@@ -170,8 +174,6 @@ export const DiagramPage: React.FC = () => {
     alert("Đã xuất JSON ra Console!");
   }, [getCleanedDiagramData]);
 
-  // 5. Cập nhật hàm onAnalyze để bao gồm cả `selectedDocumentIds`
-  // ... bên trong DiagramPage.tsx
   const onAnalyze = useCallback(
     (question: string) => {
       const diagramData = getCleanedDiagramData();

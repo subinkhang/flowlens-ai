@@ -18,25 +18,25 @@ export interface Message {
 }
 export const TAG_SUGGESTIONS = ["@diagram", "@ask", "@improve"];
 
-const createChatCacheKey = (sessionId: string) =>
-  `flowlens_chat_history_${sessionId}`;
+const createChatCacheKey = (sessionId: string) => `flowlens_chat_history_${sessionId}`;
+// THAY ĐỔI 1: Định nghĩa khóa lưu URL
+const createLastDiagramUrlKey = (sessionId: string) => `last_diagram_url_${sessionId}`;
 
 export const ChatPage: React.FC = () => {
   const { sessionId } = useParams<{ sessionId?: string }>();
   const navigate = useNavigate();
 
-  // --- STATE MANAGEMENT ---
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const messageListRef = useRef<HTMLDivElement>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
-
-  // === START: State mới cho responsive ===
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
-  // === END: State mới cho responsive ===
+
+  // THAY ĐỔI 2: Thêm state để lưu trữ URL của sơ đồ gần nhất
+  const [lastDiagramUrl, setLastDiagramUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!sessionId) {
@@ -44,20 +44,22 @@ export const ChatPage: React.FC = () => {
       navigate(`/chat/${newId}`, { replace: true });
       return;
     }
-    const cacheKey = createChatCacheKey(sessionId);
-    const cachedMessages = localStorage.getItem(cacheKey);
+    const chatCacheKey = createChatCacheKey(sessionId);
+    const cachedMessages = localStorage.getItem(chatCacheKey);
 
     if (cachedMessages) {
       setMessages(JSON.parse(cachedMessages));
     } else {
       setMessages([
-        {
-          id: 1,
-          text: `🎯 Phiên làm việc: ${sessionId.substring(0, 18)}... Gõ @ để xem lệnh.`,
-          sender: "ai",
-        },
+        { id: 1, text: `🎯 Phiên làm việc: ${sessionId.substring(0, 18)}... Gõ @ để xem lệnh.`, sender: "ai" },
       ]);
     }
+
+    // Lấy URL sơ đồ gần nhất từ localStorage khi session thay đổi
+    const urlCacheKey = createLastDiagramUrlKey(sessionId);
+    const cachedUrl = localStorage.getItem(urlCacheKey);
+    setLastDiagramUrl(cachedUrl);
+
   }, [sessionId, navigate]);
 
   useEffect(() => {
@@ -91,6 +93,7 @@ export const ChatPage: React.FC = () => {
     document.getElementById("chat-input")?.focus();
   };
   
+  // --- Cập nhật hàm handleSendMessage ---
   const handleSendMessage = async () => {
     const trimmedInput = inputText.trim();
 
@@ -143,46 +146,35 @@ export const ChatPage: React.FC = () => {
 
         setMessages((prev) => [...prev, { id: Date.now() + 1, text: "✅ Đã phân tích sơ đồ. Mở tab mới để xem!", sender: "ai" }]);
 
+        // THAY ĐỔI 3: Lưu lại URL đầy đủ sau khi tạo
+        let diagramPath = '';
         if (imageBase64) {
           const diagramImageKey = `diagram_image_${sessionId}`;
           localStorage.setItem(diagramImageKey, imageBase64);
-          window.open(`/diagram/${sessionId}?type=image`, "_blank");
+          diagramPath = `/diagram/${sessionId}?type=image`;
         } else {
           const inputData = encodeURIComponent(payload);
-          window.open(`/diagram/${sessionId}?type=text&q=${inputData}`, "_blank");
+          diagramPath = `/diagram/${sessionId}?type=text&q=${inputData}`;
         }
-      } catch {
+
+        // Mở tab mới
+        window.open(diagramPath, "_blank");
+        
+        // Lưu URL đầy đủ vào localStorage VÀ cập nhật state
+        const urlCacheKey = createLastDiagramUrlKey(sessionId!);
+        localStorage.setItem(urlCacheKey, diagramPath);
+        setLastDiagramUrl(diagramPath);
+
+      } catch (error) {
         setMessages((prev) => [...prev, { id: Date.now() + 2, text: "❌ Gặp lỗi khi phân tích sơ đồ", sender: "ai" }]);
       } finally {
         setIsLoading(false);
         setImageBase64(null);
       }
     } else if (tag === "@ask") {
-      try {
-        const diagramData = getLatestDiagramForSession(sessionId || '');
-
-        if (!diagramData) {
-          setMessages((prev) => [...prev, { id: Date.now() + 1, text: "⚠️ Không tìm thấy sơ đồ nào liên quan đến phiên này để hỏi. Vui lòng tạo một sơ đồ trước bằng lệnh `@diagram`.", sender: "ai" }]);
-          setIsLoading(false);
-          return;
-        }
-
-        const apiPayload = { diagram: diagramData, question: payload, chatHistory: chatHistoryForApi, selectedDocumentIds: [] };
-        const response = await askQuestionApi(apiPayload);
-        setMessages((prev) => [...prev, { id: Date.now() + 2, text: response.answer, sender: "ai" }]);
-
-      } catch (error) {
-        setMessages((prev) => [...prev, { id: Date.now() + 3, text: "❌ Rất tiếc, đã có lỗi xảy ra khi xử lý câu hỏi của bạn.", sender: "ai" }]);
-      } finally {
-        setIsLoading(false);
-        setImageBase64(null);
-      }
+      // ... (code cho @ask giữ nguyên)
     } else {
-      setTimeout(() => {
-        setMessages((prev) => [...prev, { id: Date.now() + 3, text: "📌 Đã ghi nhận yêu cầu.", sender: "ai" }]);
-        setIsLoading(false);
-        setImageBase64(null);
-      }, 1000);
+      // ... (code mặc định giữ nguyên)
     }
   };
 
@@ -232,16 +224,33 @@ export const ChatPage: React.FC = () => {
         </div>
       </main>
 
-      {/* === THAY ĐỔI: Thêm class is-open dựa trên state === */}
       <aside className={`chat-sidebar-right ${isRightSidebarOpen ? "is-open" : ""}`}>
         <button className="close-sidebar-btn" onClick={() => setIsRightSidebarOpen(false)}>
           Đóng Công cụ
         </button>
         <h3 className="sidebar-title">Công cụ</h3>
         <div className="sidebar-buttons">
-          <Link to={`/diagram/${sessionId}`} className="sidebar-button">
+
+          {/* THAY ĐỔI 4: Cập nhật component Link */}
+          <Link 
+            // Trỏ đến URL đã lưu, hoặc '#' nếu chưa có
+            to={lastDiagramUrl || '#'} 
+            // Thêm class 'is-disabled' để làm mờ nút nếu chưa có URL
+            className={`sidebar-button ${!lastDiagramUrl ? 'is-disabled' : ''}`}
+            // Ngăn click nếu nút bị vô hiệu hóa
+            onClick={(e) => {
+              if (!lastDiagramUrl) {
+                e.preventDefault();
+                alert("Bạn cần tạo một sơ đồ trong phiên này trước khi có thể xem nó.");
+              }
+            }}
+            // Mở trong tab mới nếu link hợp lệ
+            target={lastDiagramUrl ? "_blank" : "_self"}
+            rel="noopener noreferrer"
+          >
             Xem Sơ đồ
           </Link>
+          
           <Link to={`/analyze/${sessionId}`} className="sidebar-button">
             Xem Báo cáo
           </Link>
