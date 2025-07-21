@@ -29,12 +29,16 @@
   background-color: #e6f7ff;
 }
 
-.chat-layout {
+.history-layout {
   display: flex;
-  height: 100vh;
-  width: 100%;
-  font-family: "Segoe UI", sans-serif;
-  background: #f4f6f9;
+  flex-direction: column;
+  height: 100%;
+}
+
+@media (min-width: 768px) {
+  .history-layout {
+    padding: 24px;
+  }
 }
 
 .new-session-button {
@@ -68,10 +72,10 @@
   gap: 1rem;
 }
 
-.sidebar-button {
+.history-button {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 12px 15px;
   background-color: #ffffff;
   border: 1px solid #ced4da;
