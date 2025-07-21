@@ -8,8 +8,6 @@ import { Suggestions } from "../components/Chat/Suggestions";
 import { ChatInput } from "../components/Chat/ChatInput";
 import { isVietnameseText } from "../utils/isVietnameseText";
 import { History } from "../components/History/History";
-import { askQuestionApi } from "../api/chatApi";
-import { getLatestDiagramForSession } from "../utils/diagramUtils";
 
 export interface Message {
   id: number;
@@ -120,10 +118,6 @@ export const ChatPage: React.FC = () => {
     }
 
     const newUserMessage: Message = { id: Date.now(), text: trimmedInput || "[đã gửi ảnh]", sender: "user" };
-    
-    const chatHistoryForApi: { role: "user" | "assistant"; content: string }[] = messages
-      .filter(m => m.sender === 'user' || m.sender === 'ai')
-      .map(m => ({ role: m.sender === 'ai' ? 'assistant' : 'user', content: m.text }));
 
     setMessages((prev) => [...prev, newUserMessage]);
     setInputText("");
