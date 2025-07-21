@@ -273,7 +273,6 @@ button:disabled {
   padding: 1rem;
 }
 
-/* Sidebar phải - Công cụ */
 .chat-sidebar-right {
   width: 320px;
   border-left: 1px solid #e9ecef;
@@ -318,4 +317,12 @@ button:disabled {
   color: #004085;
   background-color: #e7f3ff;
   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.chat-sidebar-left {
+  width: 320px;
+  border-right: 1px solid #e9ecef;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
 }
