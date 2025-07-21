@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useDiagramAnalysis } from "../hooks/useDiagramAnalysis";
+import { useParams } from "react-router-dom";
 // import { useSession } from "../hooks/useSession"; 
 // Import các component con để hiển thị báo cáo
 import ReportOverview from "../components/Analysis/ReportOverview";
@@ -13,7 +14,7 @@ import ReportSources from "../components/Analysis/ReportSources";
 const AnalyzePage: React.FC = () => {
   // Lấy các hàm và state từ cả hai hook
   const { analysisData, isLoading, error, runAnalysis, statusMessage } = useDiagramAnalysis();
-  // const { sessionId } = useSession(); // Lấy sessionId từ URL
+  const { sessionId } = useParams<{ sessionId: string }>();
   const [timestamp, setTimestamp] = useState("");
   const hasRunAnalysis = useRef(false);
 
@@ -29,10 +30,14 @@ const AnalyzePage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (hasRunAnalysis.current === false) {
-      const storedState = localStorage.getItem("analysisState");
+    if (hasRunAnalysis.current === false && sessionId) { // Thêm điều kiện `sessionId` tồn tại
+      // Tạo lại khóa động để đọc đúng dữ liệu
+      const analysisStateKey = `analysisState_${sessionId}`;
+      const storedState = localStorage.getItem(analysisStateKey);
+
       if (!storedState) {
-        console.error("Không tìm thấy 'analysisState' để bắt đầu phân tích.");
+        console.error(`Không tìm thấy 'analysisState' cho session ${sessionId} để bắt đầu phân tích.`);
+        console.error(`Không tìm thấy dữ liệu phân tích cho phiên làm việc này. Vui lòng thử lại từ trang sơ đồ.`);
         return;
       }
       
@@ -40,17 +45,18 @@ const AnalyzePage: React.FC = () => {
       
       const diagramData = parsedPayload.diagram || { nodes: [], edges: [] };
       
+      // Giờ đây sessionId đã có sẵn từ useParams
       runAnalysis(
         diagramData.nodes || [],
         diagramData.edges || [],
         parsedPayload.selectedDocumentIds || [],
         parsedPayload.question || "Hãy phân tích sơ đồ này.",
-        parsedPayload.sessionId || ""
+        sessionId // <-- Truyền sessionId vào đây
       );
 
       hasRunAnalysis.current = true;
     }
-  }, [runAnalysis]);
+  }, [runAnalysis, sessionId]);
   
   if (isLoading) {
     return (

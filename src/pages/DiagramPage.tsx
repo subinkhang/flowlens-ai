@@ -171,17 +171,24 @@ export const DiagramPage: React.FC = () => {
   }, [getCleanedDiagramData]);
 
   // 5. Cập nhật hàm onAnalyze để bao gồm cả `selectedDocumentIds`
+  // ... bên trong DiagramPage.tsx
   const onAnalyze = useCallback(
     (question: string) => {
       const diagramData = getCleanedDiagramData();
 
+      // Thêm sessionId vào payload để hook useDiagramAnalysis có thể sử dụng
       const analysisState = {
+        sessionId: sessionId, // <-- Thêm sessionId vào đây
         diagram: diagramData,
         question: question,
         selectedDocumentIds: selectedDocumentIds,
       };
 
-      localStorage.setItem("analysisState", JSON.stringify(analysisState));
+      // Tạo khóa động cho analysisState
+      const analysisStateKey = `analysisState_${sessionId}`;
+
+      // Lưu trạng thái phân tích vào localStorage với khóa động
+      localStorage.setItem(analysisStateKey, JSON.stringify(analysisState));
       
       window.open(`/analyze/${sessionId}`, "_blank");
     },
