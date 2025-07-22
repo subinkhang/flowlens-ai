@@ -8,6 +8,8 @@ import { Suggestions } from "../components/Chat/Suggestions";
 import { ChatInput } from "../components/Chat/ChatInput";
 import { isVietnameseText } from "../utils/isVietnameseText";
 import { History } from "../components/History/History";
+import { getLatestDiagramForSession } from "../utils/diagramUtils";
+import { askQuestionApi } from "../api/chatApi";
 
 export interface Message {
   id: number;
@@ -119,6 +121,10 @@ export const ChatPage: React.FC = () => {
 
     const newUserMessage: Message = { id: Date.now(), text: trimmedInput || "[đã gửi ảnh]", sender: "user" };
 
+    const chatHistoryForApi: { role: "user" | "assistant"; content: string }[] = messages
+      .filter(m => m.sender === 'user' || m.sender === 'ai')
+      .map(m => ({ role: m.sender === 'ai' ? 'assistant' : 'user', content: m.text }));
+
     setMessages((prev) => [...prev, newUserMessage]);
     setInputText("");
     setIsLoading(true);
@@ -166,9 +172,31 @@ export const ChatPage: React.FC = () => {
         setImageBase64(null);
       }
     } else if (tag === "@ask") {
-      // ... (code cho @ask giữ nguyên)
+      try {
+        const diagramData = getLatestDiagramForSession(sessionId || '');
+
+        if (!diagramData) {
+          setMessages((prev) => [...prev, { id: Date.now() + 1, text: "⚠️ Không tìm thấy sơ đồ nào liên quan đến phiên này để hỏi. Vui lòng tạo một sơ đồ trước bằng lệnh `@diagram`.", sender: "ai" }]);
+          setIsLoading(false);
+          return;
+        }
+
+        const apiPayload = { diagram: diagramData, question: payload, chatHistory: chatHistoryForApi, selectedDocumentIds: [] };
+        const response = await askQuestionApi(apiPayload);
+        setMessages((prev) => [...prev, { id: Date.now() + 2, text: response.answer, sender: "ai" }]);
+
+      } catch (error) {
+        setMessages((prev) => [...prev, { id: Date.now() + 3, text: "❌ Rất tiếc, đã có lỗi xảy ra khi xử lý câu hỏi của bạn.", sender: "ai" }]);
+      } finally {
+        setIsLoading(false);
+        setImageBase64(null);
+      }
     } else {
-      // ... (code mặc định giữ nguyên)
+      setTimeout(() => {
+        setMessages((prev) => [...prev, { id: Date.now() + 3, text: "📌 Đã ghi nhận yêu cầu.", sender: "ai" }]);
+        setIsLoading(false);
+        setImageBase64(null);
+      }, 1000);
     }
   };
 
