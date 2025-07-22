@@ -32,6 +32,7 @@ export const useDiagramAnalysis = () => {
   const [statusMessage, setStatusMessage] = useState<string>('');
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const payloadRef = useRef<object | null>(null);
 
   const runAnalysis = useCallback(async (
     nodes: DiagramNode[],
@@ -47,6 +48,7 @@ export const useDiagramAnalysis = () => {
     setStatusMessage('Bắt đầu phiên phân tích...');
 
     const payload = { sessionId, diagram: { nodes, edges }, selectedDocumentIds, ...(question?.trim() && { question }) };
+    payloadRef.current = payload;
 
     console.log("--- [HOOK DEBUG] PAYLOAD ĐƯỢC TẠO ĐỂ GỬI ĐI ---");
     console.log(JSON.stringify(payload, null, 2));
@@ -102,9 +104,14 @@ export const useDiagramAnalysis = () => {
           setStatusMessage('Phân tích hoàn tất!');
           
           // Lưu kết quả cuối cùng vào cache
-          const payload = { /* ... cần tạo lại payload nếu muốn cache chính xác ... */ };
-          const cacheKey = createAnalysisCacheKey(payload); // Tạm thời dùng payload rỗng
-          localStorage.setItem(cacheKey, JSON.stringify(response.result!));
+          if (payloadRef.current) {
+            // Dùng payload đã lưu để tạo cache key chính xác
+            const cacheKey = createAnalysisCacheKey(payloadRef.current);
+            localStorage.setItem(cacheKey, JSON.stringify(response.result!));
+            console.log(`Đã lưu kết quả vào cache với key: ${cacheKey}`);
+          } else {
+            console.warn("Không thể lưu cache do payload ban đầu không được tìm thấy.");
+          }
 
         } else if (response.status === 'FAILED') {
           clearInterval(intervalRef.current  ?? 0); // Dừng polling

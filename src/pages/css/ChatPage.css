@@ -1,3 +1,4 @@
+/* === CÁC STYLE HIỆN TẠI CỦA BẠN (GIỮ NGUYÊN) === */
 .chat-page {
   display: flex;
   flex-direction: column;
@@ -26,7 +27,7 @@
   padding: 12px 16px;
   margin: 8px 16px;
   border-radius: 16px;
-  max-width: 60%; /* Giảm max-width để tin nhắn gọn hơn */
+  max-width: 60%;
   word-wrap: break-word;
   line-height: 1.4;
   font-size: 15px;
@@ -34,17 +35,17 @@
 }
 
 .user-message {
-  margin-left: auto; /* Đẩy tin nhắn của client sang bên phải */
+  margin-left: auto;
   background-color: #d1e7dd;
   color: #0f5132;
-  border-top-right-radius: 4px; /* Bo góc nhẹ ở góc trên bên phải để giống chat */
+  border-top-right-radius: 4px;
 }
 
 .ai-message {
-  margin-right: auto; /* Đẩy tin nhắn của hệ thống sang bên trái */
+  margin-right: auto;
   background-color: #e2e3e5;
   color: #41464b;
-  border-top-left-radius: 4px; /* Bo góc nhẹ ở góc trên bên trái để giống chat */
+  border-top-left-radius: 4px;
 }
 
 .loading-indicator {
@@ -232,23 +233,50 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.chat-sidebar {
-  position: fixed; 
-  top: 0;
-  right: 0;
-  
-  width: 320px;
+.chat-layout {
+  display: flex;
   height: 100vh;
+  width: 100%;
+  font-family: "Segoe UI", sans-serif;
+  background: #f4f6f9;
+}
 
-  /* Giao diện */
+.chat-page {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-sidebar {
+  width: 250px;
+  border-right: 1px solid #ddd;
+  background-color: #f9fafb;
+  overflow-y: auto;
+}
+
+.chat-sidebar-left {
+  width: 320px;
+  border-right: 1px solid #e9ecef;
   background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 1rem;
+}
+
+.chat-sidebar-right {
+  width: 320px;
   border-left: 1px solid #e9ecef;
-  padding: 1.5rem; /* 24px */
-  
-  z-index: 10; 
-  
-  transition: transform 0.3s ease-in-out;
-  
+  background-color: #f8f9fa;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
 }
@@ -257,7 +285,6 @@ button:disabled {
   font-size: 1.125rem;
   font-weight: 600;
   color: #212529;
-  margin-top: 0;
   margin-bottom: 1.5rem;
   border-bottom: 1px solid #dee2e6;
   padding-bottom: 0.75rem;
@@ -291,9 +318,98 @@ button:disabled {
   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
-.chat-page {
-  position: relative;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
+
+.mobile-header,
+.close-sidebar-btn {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .chat-layout {
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Ẩn sidebar theo mặc định trên mobile */
+  .chat-sidebar-left,
+  .chat-sidebar-right {
+    position: fixed;
+    top: 0;
+    height: 100%;
+    width: 90%;
+    max-width: 320px;
+    z-index: 1000;
+    background-color: #f8f9fa;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    border-right: none;
+    border-left: none;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chat-sidebar-right {
+    left: auto;
+    right: 0;
+    transform: translateX(100%);
+  }
+
+  .chat-sidebar-left.is-open {
+    transform: translateX(0);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  }
+  .chat-sidebar-right.is-open {
+    transform: translateX(0);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .close-sidebar-btn {
+    display: block;
+    background: #e9ecef;
+    color: #495057;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  .mobile-header button {
+    background: none;
+    border: 1px solid #ccc;
+    padding: 6px 10px;
+    font-size: 14px;
+    border-radius: 6px;
+    color: #333;
+  }
+
+  .chat-main {
+    padding: 0;
+  }
+  
+  .message-list {
+    padding: 8px;
+  }
+
+  .message {
+    max-width: 85%;
+    font-size: 14px;
+  }
+  
+  .input-area {
+    padding: 8px;
+    margin-bottom: 14px;
+  }
 }

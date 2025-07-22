@@ -2,7 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <script>
+      const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const favicon = document.createElement('link');
+      favicon.rel = 'icon';
+      favicon.type = 'image/png';
+      favicon.href = darkMode ? '/FlowLensLogoDarkMode.png' : '/FlowLensLogoLightMode.png';
+      document.head.appendChild(favicon);
+
+      // Cập nhật nếu người dùng thay đổi chế độ
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        favicon.href = e.matches ? '/FlowLensLogoDarkMode.png' : '/FlowLensLogoLightMode.png';
+      });
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FlowLens AI</title>
   </head>
