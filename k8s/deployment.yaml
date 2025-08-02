@@ -1,0 +1,21 @@
+# k8s/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flowlens-frontend-deployment
+spec:
+  replicas: 2 # Yêu cầu K8s chạy 2 bản sao của ứng dụng
+  selector:
+    matchLabels:
+      app: flowlens-frontend
+  template:
+    metadata:
+      labels:
+        app: flowlens-frontend
+    spec:
+      containers:
+      - name: flowlens-frontend-container
+        # Dòng này là một placeholder, CI/CD sẽ tự động thay thế
+        image: IMAGE_TAG_PLACEHOLDER
+        ports:
+        - containerPort: 80 # Port mà Nginx lắng nghe bên trong container

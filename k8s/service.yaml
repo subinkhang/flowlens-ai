@@ -1,0 +1,15 @@
+# k8s/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: flowlens-frontend-service
+spec:
+  # 'NodePort' sẽ mở một port trên máy của bạn để có thể truy cập từ bên ngoài
+  type: NodePort
+  selector:
+    # Gửi traffic đến các Pod có label 'app: flowlens-frontend'
+    app: flowlens-frontend
+  ports:
+  - protocol: TCP
+    port: 80 # Port của Service trong cụm K8s
+    targetPort: 80 # Port của container mà traffic sẽ được chuyển đến

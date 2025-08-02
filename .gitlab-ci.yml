@@ -1,0 +1,58 @@
+# .gitlab-ci.yml
+
+# Định nghĩa các giai đoạn của pipeline
+stages:
+  - build
+  - deploy
+
+# Biến môi trường để dùng trong các job
+variables:
+  # Tên của ảnh Docker, sử dụng các biến có sẵn của GitLab
+  # $CI_REGISTRY_IMAGE là URL registry của dự án
+  # $CI_COMMIT_SHORT_SHA là 7 ký tự đầu của mã hash commit
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+
+# Job 1: Build ảnh Docker và đẩy lên GitLab Registry
+build_docker_image:
+  stage: build
+  image: docker:20.10.16 # Sử dụng ảnh có sẵn Docker
+  services:
+    - docker:20.10.16-dind # Chạy một service Docker-in-Docker
+  script:
+    - echo "Logging into GitLab Container Registry..."
+    # Đăng nhập vào GitLab Registry bằng token của job
+    - docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
+    - echo "Building Docker image: $IMAGE_TAG"
+    # Build ảnh từ Dockerfile
+    - docker build -t $IMAGE_TAG .
+    - echo "Pushing Docker image to registry..."
+    # Đẩy ảnh lên registry
+    - docker push $IMAGE_TAG
+  # Chỉ chạy job này trên nhánh 'main'
+  only:
+    - main
+
+# Job 2: Deploy ứng dụng lên cluster Kind
+deploy_to_kind:
+  stage: deploy
+  image:
+    # Sử dụng một ảnh có sẵn kubectl
+    name: bitnami/kubectl:latest
+    entrypoint: [""]
+  # Thêm tag để đảm bảo chỉ runner local của chúng ta nhận job này
+  tags:
+    - local-k8s-runner
+  script:
+    - echo "Deploying to Kind cluster..."
+    # Lệnh 'sed' sẽ tìm và thay thế placeholder trong file deployment.yaml
+    # bằng tên ảnh Docker thật đã được build ở bước trên.
+    - sed -i "s|IMAGE_TAG_PLACEHOLDER|$IMAGE_TAG|g" k8s/deployment.yaml
+    - echo "Applying Kubernetes manifest files..."
+    # Dùng kubectl để áp dụng các file cấu hình vào cluster
+    - kubectl apply -f k8s/deployment.yaml
+    - kubectl apply -f k8s/service.yaml
+    - echo "Rolling out new version..."
+    # Lệnh này yêu cầu K8s cập nhật các Pod với ảnh mới
+    - kubectl rollout restart deployment flowlens-frontend-deployment
+  only:
+    - main
